@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+// @ts-ignore - no types needed for this simple usage
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import { parseCV } from '@/lib/parse-cv';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -25,10 +27,41 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Extract text from PDF using pdf-parse (debug-disabled version to avoid ENOENT errors)
-    const pdfParse = (await import('pdf-parse-debugging-disabled')).default;
-    const pdfData = await pdfParse(buffer);
-    const cvText = pdfData.text;
+    // Extract text and annotations from PDF using pdfjs-dist
+    const uint8Array = new Uint8Array(buffer);
+    const loadingTask = pdfjsLib.getDocument({ data: uint8Array, useSystemFonts: true });
+    const pdfDocument = await loadingTask.promise;
+    
+    let cvText = '';
+    const extractedUrls = new Set<string>();
+
+    for (let i = 1; i <= pdfDocument.numPages; i++) {
+      const page = await pdfDocument.getPage(i);
+      
+      // Extract text
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      cvText += pageText + '\n';
+      
+      // Extract annotations (hidden links)
+      try {
+        const annotations = await page.getAnnotations();
+        for (const annotation of annotations) {
+          if (annotation.subtype === 'Link' && annotation.url) {
+            extractedUrls.add(annotation.url);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not extract annotations for page', i, e);
+      }
+    }
+
+    if (extractedUrls.size > 0) {
+      cvText += '\n\n--- Hidden Links Extracted from PDF Annotations ---\n';
+      Array.from(extractedUrls).forEach(url => {
+        cvText += `- ${url}\n`;
+      });
+    }
 
     if (!cvText || cvText.trim().length < 50) {
       return NextResponse.json(

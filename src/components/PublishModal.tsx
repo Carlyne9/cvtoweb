@@ -16,6 +16,11 @@ export default function PublishModal({ portfolioId, suggestedUsername, onClose, 
   const [error, setError] = useState<string | null>(null);
 
   const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'cvtoweb.com';
+  const isLocal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    !window.location.hostname.includes(appDomain)
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,17 +68,35 @@ export default function PublishModal({ portfolioId, suggestedUsername, onClose, 
               Your URL
             </label>
             <div className="flex items-center">
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="flex-1 px-4 py-3 border border-r-0 border-slate-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-                placeholder="yourname"
-                maxLength={32}
-              />
-              <span className="px-4 py-3 bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-slate-500 text-sm">
-                .{appDomain}
-              </span>
+              {isLocal ? (
+                <>
+                  <span className="px-4 py-3 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-slate-500 text-sm">
+                    /portfolio/
+                  </span>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    className="flex-1 px-4 py-3 border border-l-0 border-slate-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
+                    placeholder="yourname"
+                    maxLength={32}
+                  />
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    className="flex-1 px-4 py-3 border border-r-0 border-slate-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
+                    placeholder="yourname"
+                    maxLength={32}
+                  />
+                  <span className="px-4 py-3 bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-slate-500 text-sm">
+                    .{appDomain}
+                  </span>
+                </>
+              )}
             </div>
             {username && !isValidUsername && (
               <p className="text-red-500 text-sm mt-1">

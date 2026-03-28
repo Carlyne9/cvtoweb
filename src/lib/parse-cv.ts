@@ -43,6 +43,8 @@ The JSON structure must be:
 
 If any field is not found in the CV, use an empty string or empty array as appropriate. Do not make up information that isn't in the CV, except for the summary which you can craft based on the experience and skills if one isn't provided.
 
+CRITICAL INSTRUCTION FOR LINKS: You MUST preserve ALL hyperlinks and URLs exactly as they appear in the CV text. Whether a URL is in the contact section or within a bullet point, extract it exactly as written without altering it, fixing it, or stripping the protocol (http/https).
+
 CV Text:
 ${cvText}
 

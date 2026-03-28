@@ -94,8 +94,8 @@ export default function Home() {
           onDrop={handleDrop}
           className={`
             relative border-2 border-dashed rounded-2xl p-16 text-center transition-all duration-300
-            ${isDragging 
-              ? 'border-blue-400 bg-blue-500/10' 
+            ${isDragging
+              ? 'border-blue-400 bg-blue-500/10'
               : 'border-slate-600 hover:border-slate-500 bg-slate-800/50'
             }
             ${isLoading ? 'pointer-events-none opacity-60' : 'cursor-pointer'}
@@ -108,7 +108,7 @@ export default function Home() {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             disabled={isLoading}
           />
-          
+
           {isLoading ? (
             <div className="space-y-4">
               <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -150,7 +150,7 @@ export default function Home() {
             <h3 className="text-white font-semibold mb-2">Instant</h3>
             <p className="text-slate-400 text-sm">AI extracts your info and builds your site in seconds</p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +160,7 @@ export default function Home() {
             <h3 className="text-white font-semibold mb-2">Shareable</h3>
             <p className="text-slate-400 text-sm">Get your own link like yourname.cvtoweb.com</p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-14 h-14 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

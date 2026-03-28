@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to publish portfolio' },
         { status: 500 }
       );
+    }
+
+    // Send the welcome email with the public and edit links
+    try {
+      await sendWelcomeEmail(email.toLowerCase(), portfolio.username, portfolio.id);
+    } catch (err) {
+      console.error('Failed to send welcome email:', err);
+      // We don't fail the entire publish request just because the email failed
     }
 
     return NextResponse.json({
