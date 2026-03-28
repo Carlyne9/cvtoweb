@@ -13,17 +13,20 @@ export function middleware(request: NextRequest) {
   // Extract subdomain
   let subdomain: string | null = null;
   
-  if (isLocalhost) {
-    // For local development: username.localhost:3000
+  if (isLocalhost || hostname.endsWith('.vercel.app')) {
+    // For local development or Vercel preview URLs, don't try to extract a subdomain
+    // They will use path-based routing (e.g. /portfolio/username)
     const parts = hostname.split('.');
-    if (parts.length > 1 && parts[0] !== 'www') {
+    if (isLocalhost && parts.length > 1 && parts[0] !== 'www') {
       subdomain = parts[0].split(':')[0]; // Remove port if present
     }
   } else {
     // For production: username.cvtoweb.com
-    const parts = hostname.split('.');
-    if (parts.length > 2 || (parts.length === 2 && !hostname.includes(appDomain))) {
-      subdomain = parts[0];
+    if (hostname !== appDomain) {
+      const parts = hostname.split('.');
+      if (parts.length > 2 || (parts.length === 2 && !hostname.includes(appDomain))) {
+        subdomain = parts[0];
+      }
     }
   }
   
