@@ -13,20 +13,27 @@ export function middleware(request: NextRequest) {
   // Extract subdomain
   let subdomain: string | null = null;
   
-  if (isLocalhost || hostname.endsWith('.vercel.app')) {
-    // For local development or Vercel preview URLs, don't try to extract a subdomain
+  // If the hostname is exactly the app domain or a Vercel system domain, we ignore it for subdomains
+  const isAppDomain = hostname === appDomain;
+  const isVercelSystemDomain = hostname.endsWith('.vercel.app');
+
+  if (isLocalhost || isAppDomain || isVercelSystemDomain) {
+    // For local development or the main app domain, don't try to extract a subdomain
     // They will use path-based routing (e.g. /portfolio/username)
-    const parts = hostname.split('.');
-    if (isLocalhost && parts.length > 1 && parts[0] !== 'www') {
-      subdomain = parts[0].split(':')[0]; // Remove port if present
+    if (isLocalhost) {
+      const parts = hostname.split('.');
+      if (parts.length > 1 && parts[0] !== 'www') {
+        const potentialSubdomain = parts[0].split(':')[0]; // Remove port if present
+        if (potentialSubdomain !== 'localhost') {
+          subdomain = potentialSubdomain;
+        }
+      }
     }
   } else {
-    // For production: username.cvtoweb.com
-    if (hostname !== appDomain) {
-      const parts = hostname.split('.');
-      if (parts.length > 2 || (parts.length === 2 && !hostname.includes(appDomain))) {
-        subdomain = parts[0];
-      }
+    // For production custom domains: username.customdomain.com
+    const parts = hostname.split('.');
+    if (parts.length > 2 || (parts.length === 2 && !hostname.includes(appDomain))) {
+      subdomain = parts[0];
     }
   }
   
