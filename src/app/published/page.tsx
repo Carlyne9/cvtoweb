@@ -8,10 +8,13 @@ function PublishedContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username');
   const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'cvtoweb.com';
-  const isLocal = appDomain.includes('localhost');
-  const portfolioUrl = isLocal 
-    ? `http://${appDomain}/portfolio/${username}` 
-    : `https://${username}.${appDomain}`;
+  const hasCustomDomain = typeof window !== 'undefined' &&
+    !window.location.hostname.includes('localhost') &&
+    !window.location.hostname.includes('127.0.0.1') &&
+    !window.location.hostname.includes('.vercel.app');
+  const portfolioUrl = hasCustomDomain
+    ? `https://${username}.${appDomain}`
+    : `${typeof window !== 'undefined' ? window.location.origin : ''}/portfolio/${username}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(portfolioUrl);
