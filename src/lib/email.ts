@@ -1,19 +1,11 @@
 import { Resend } from 'resend';
+import { getPortfolioUrl, getEditUrl } from './urls';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function sendWelcomeEmail(email: string, username: string, portfolioId: string) {
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'cvtoweb.vercel.app';
-
-  // Format the URLs
-  const isLocal = appDomain.includes('localhost') || appDomain.includes('127.0.0.1');
-  const publicUrl = isLocal
-    ? `http://${appDomain}/portfolio/${username}`
-    : `https://${username}.${appDomain}`;
-
-  const editUrl = isLocal
-    ? `http://${appDomain}/preview/${portfolioId}`
-    : `https://${appDomain}/preview/${portfolioId}`;
+  const publicUrl = getPortfolioUrl(username);
+  const editUrl = getEditUrl(portfolioId);
 
   // If no API key is provided, just simulate the email send
   if (!resend) {

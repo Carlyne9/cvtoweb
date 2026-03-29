@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getAppDomain, isSubdomainEnabled } from '@/lib/urls';
 
 interface Props {
   portfolioId: string;
@@ -15,12 +16,8 @@ export default function PublishModal({ portfolioId, suggestedUsername, onClose, 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'cvtoweb.com';
-  const isLocal = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    !window.location.hostname.includes(appDomain)
-  );
+  const appDomain = getAppDomain();
+  const showSubdomain = isSubdomainEnabled();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +65,7 @@ export default function PublishModal({ portfolioId, suggestedUsername, onClose, 
               Your URL
             </label>
             <div className="flex items-center">
-              {isLocal ? (
+              {!showSubdomain ? (
                 <>
                   <span className="px-4 py-3 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-slate-500 text-sm">
                     /portfolio/
