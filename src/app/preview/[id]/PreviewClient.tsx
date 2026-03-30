@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Portfolio, PortfolioData } from '@/types/portfolio';
 import PortfolioTemplate from '@/components/PortfolioTemplate';
 import PublishModal from '@/components/PublishModal';
+import { getPortfolioUrl } from '@/lib/urls';
 
 interface Props {
   portfolio: Portfolio;
@@ -39,6 +40,10 @@ export default function PreviewClient({ portfolio }: Props) {
       
       setSaveStatus('success');
       setIsEditing(false);
+      
+      // Update the page data to reflect the new saved state
+      router.refresh(); 
+      
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
       console.error(err);
@@ -47,6 +52,8 @@ export default function PreviewClient({ portfolio }: Props) {
       setIsSaving(false);
     }
   };
+
+  const publicUrl = portfolio.username ? getPortfolioUrl(portfolio.username) : null;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -66,7 +73,9 @@ export default function PreviewClient({ portfolio }: Props) {
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isEditing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
             <span className="text-sm font-medium">
-              {isEditing ? 'Editing Mode' : 'Preview Mode'}
+              {portfolio.is_published 
+                ? (isEditing ? 'Editing Live Site' : 'Live Preview')
+                : (isEditing ? 'Editing Draft' : 'Draft Preview')}
             </span>
           </div>
         </div>
@@ -109,14 +118,14 @@ export default function PreviewClient({ portfolio }: Props) {
                     Saving...
                   </>
                 ) : (
-                  'Save Changes'
+                  portfolio.is_published ? 'Update Live Site' : 'Save Changes'
                 )}
               </button>
             </>
           ) : (
             <>
               {saveStatus === 'success' && (
-                <span className="text-green-400 text-sm font-medium animate-fade-in">Saved successfully!</span>
+                <span className="text-green-400 text-sm font-medium animate-fade-in">Changes saved!</span>
               )}
               <button
                 onClick={() => setIsEditing(true)}
@@ -124,12 +133,27 @@ export default function PreviewClient({ portfolio }: Props) {
               >
                 Edit Content
               </button>
-              <button
-                onClick={() => setShowPublishModal(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md"
-              >
-                Publish Site
-              </button>
+              
+              {portfolio.is_published ? (
+                <a
+                  href={publicUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md flex items-center gap-2"
+                >
+                  View Live Site
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              ) : (
+                <button
+                  onClick={() => setShowPublishModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md"
+                >
+                  Publish Site
+                </button>
+              )}
             </>
           )}
         </div>

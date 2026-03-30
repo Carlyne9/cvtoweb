@@ -4,7 +4,7 @@ import { PortfolioData } from '@/types/portfolio';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function parseCV(cvText: string): Promise<PortfolioData> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `You are a CV/resume parser. Extract the following information from the CV text and return it as valid JSON only, with no additional text or explanation.
 
@@ -48,23 +48,28 @@ ${cvText}
 
 Respond with only valid JSON, no markdown code blocks, no explanation.`;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
-
-  // Remove markdown code blocks if present
-  let jsonText = text.trim();
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.replace(/```\n?/g, '');
-  }
-
   try {
-    const parsed = JSON.parse(jsonText) as PortfolioData;
-    return parsed;
-  } catch (error) {
-    console.error('Failed to parse Gemini response:', jsonText);
-    throw new Error('Failed to parse AI response as JSON');
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+
+    // Remove markdown code blocks if present
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '');
+    }
+
+    try {
+      const parsed = JSON.parse(jsonText) as PortfolioData;
+      return parsed;
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response as JSON:', jsonText);
+      throw new Error('Failed to parse AI response as JSON');
+    }
+  } catch (apiError) {
+    console.error('Gemini API Error:', apiError);
+    throw new Error('Failed to generate portfolio data from CV');
   }
 }
