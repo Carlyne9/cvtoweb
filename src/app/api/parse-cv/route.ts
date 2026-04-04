@@ -47,8 +47,13 @@ export async function POST(request: NextRequest) {
       try {
         const annotations = await page.getAnnotations();
         for (const annotation of annotations) {
-          if (annotation.subtype === 'Link' && annotation.url) {
-            extractedUrls.add(annotation.url);
+          // Check for standard Link subtype
+          if (annotation.subtype === 'Link') {
+            // Links can be in .url, .unsafeUrl, or within an .action object (A.URI)
+            const url = annotation.url || annotation.unsafeUrl || (annotation.action && (annotation.action.url || annotation.action.URI));
+            if (url && typeof url === 'string' && url.startsWith('http')) {
+              extractedUrls.add(url);
+            }
           }
         }
       } catch (e) {
@@ -56,8 +61,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fallback: Also look for URLs in the text itself via regex
+    const textUrls = cvText.match(/https?:\/\/[^\s)]+/g);
+    if (textUrls) {
+      textUrls.forEach(url => extractedUrls.add(url));
+    }
+
     if (extractedUrls.size > 0) {
-      cvText += '\n\n--- Hidden Links Extracted from PDF Annotations ---\n';
+      cvText += '\n\n--- Links Extracted from PDF ---\n';
       Array.from(extractedUrls).forEach(url => {
         cvText += `- ${url}\n`;
       });
