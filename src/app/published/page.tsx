@@ -7,14 +7,19 @@ import Link from 'next/link';
 function PublishedContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username');
+  const id = searchParams.get('id');
   const [portfolioUrl, setPortfolioUrl] = useState(`/portfolio/${username}`);
+  const [editUrl, setEditUrl] = useState('');
 
   useEffect(() => {
     setPortfolioUrl(`${window.location.origin}/portfolio/${username}`);
-  }, [username]);
+    if (id) {
+      setEditUrl(`${window.location.origin}/edit/${id}`);
+    }
+  }, [username, id]);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(portfolioUrl);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -45,13 +50,38 @@ function PublishedContent() {
               className="flex-1 bg-slate-700 text-white px-4 py-3 rounded-lg text-center font-medium"
             />
             <button
-              onClick={copyToClipboard}
+              onClick={() => copyToClipboard(portfolioUrl)}
               className="px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
             >
               Copy
             </button>
           </div>
         </div>
+
+        {/* Secret Edit URL Display */}
+        {id && (
+          <div className="bg-yellow-900/40 border border-yellow-700/50 rounded-xl p-4 mb-6">
+            <p className="text-yellow-400 text-sm mb-1 font-bold flex items-center justify-center gap-1">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+               Your Secret Edit Link
+            </p>
+            <p className="text-yellow-200/70 text-xs mb-3 text-center">Save this link! You will need it to update your portfolio later.</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editUrl}
+                readOnly
+                className="flex-1 bg-slate-800 text-yellow-100 px-4 py-3 rounded-lg text-center font-medium opacity-80"
+              />
+              <button
+                onClick={() => copyToClipboard(editUrl)}
+                className="px-4 py-3 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors font-medium cursor-pointer"
+              >
+                Copy Edit Link
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">

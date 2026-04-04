@@ -24,7 +24,7 @@ export default function PreviewClient({ portfolio }: Props) {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handlePublishSuccess = (username: string) => {
-    router.push(`/published?username=${username}`);
+    router.push(`/published?username=${username}&id=${portfolio.id}`);
   };
 
   // The core save function used by both auto-save and manual save
