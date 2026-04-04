@@ -1,11 +1,7 @@
-import OpenAI from 'openai';
+
 import { PortfolioData } from '@/types/portfolio';
 
 export async function parseCV(cvText: string): Promise<PortfolioData> {
-  const openai = new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY || "dummy_key_to_prevent_build_crash",
-  });
 
   const prompt = `You are a CV/resume parser. Extract the following information from the CV text and return it as valid JSON only, with no additional text or explanation.
 
@@ -50,13 +46,26 @@ ${cvText}
 Respond with only valid JSON, no markdown code blocks, no explanation.`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 4096,
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || ''}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 4096,
+      })
     });
 
-    const text = completion.choices[0]?.message?.content || '';
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`DeepSeek API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
 
     // Remove markdown code blocks if present
     let jsonText = text.trim();
