@@ -26,6 +26,7 @@ export default function Home() {
     if (file) {
       handleFile(file);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +34,7 @@ export default function Home() {
     if (file) {
       handleFile(file);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFile = async (file: File) => {

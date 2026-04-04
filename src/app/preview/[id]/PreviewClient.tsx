@@ -103,6 +103,7 @@ export default function PreviewClient({ portfolio }: Props) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localData, isEditing]);
 
   const publicUrl = portfolio.username ? getPortfolioUrl(portfolio.username) : null;
@@ -168,7 +169,7 @@ export default function PreviewClient({ portfolio }: Props) {
                 <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold ml-1">Theme</span>
                 <select
                   value={localData.theme || 'midnight'}
-                  onChange={(e) => setLocalData({ ...localData, theme: e.target.value as any })}
+                  onChange={(e) => setLocalData({ ...localData, theme: e.target.value as 'midnight' | 'snow' | 'cobalt' })}
                   className="bg-transparent text-sm font-medium py-1.5 focus:outline-none cursor-pointer pr-2"
                 >
                   <option value="midnight" className="bg-slate-900">Midnight</option>

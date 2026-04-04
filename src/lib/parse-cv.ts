@@ -63,8 +63,8 @@ Respond with only valid JSON, no markdown code blocks, no explanation.`;
   try {
     const parsed = JSON.parse(jsonText) as PortfolioData;
     return parsed;
-  } catch (error) {
-    console.error('Failed to parse Gemini response:', jsonText);
+  } catch (err) {
+    console.error('Failed to parse Gemini response:', jsonText, err);
     throw new Error('Failed to parse AI response as JSON');
   }
 }

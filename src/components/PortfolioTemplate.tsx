@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { PortfolioData } from '@/types/portfolio';
 import { 
   DndContext, 
@@ -7,9 +8,7 @@ import {
   KeyboardSensor,
   PointerSensor,
   useSensor,
-  useSensors,
-  DragOverlay,
-  defaultDropAnimationSideEffects
+  useSensors
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -20,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Props {
   data: PortfolioData;
@@ -69,20 +68,12 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onUpdate?.(newData);
   };
 
-  const moveSection = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...sectionOrder];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-    
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
-    handleUpdate({ ...data, sectionOrder: newOrder });
-  };
-
   const handleChange = (path: string, value: string) => {
     if (!onUpdate) return;
 
     const newData = { ...data };
     const parts = path.split('.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let current: any = newData;
 
     for (let i = 0; i < parts.length - 1; i++) {
@@ -104,6 +95,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     if (!onUpdate) return;
     const newData = { ...data };
     const parts = path.split('.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let current: any = newData;
     for (let i = 0; i < parts.length; i++) {
       current = current[parts[i]];
@@ -218,6 +210,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onKeyDown?: (e: React.KeyboardEvent) => void,
     id?: string,
     className?: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     element?: any
   }) => {
     if (!isEditing) return <Element className={className}>{value}</Element>;
@@ -227,6 +220,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         id={id}
         contentEditable
         suppressContentEditableWarning
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onBlur={(e: any) => onSave(e.target.innerText)}
         onKeyDown={onKeyDown}
         className={`${className} outline-none focus:ring-2 focus:ring-blue-500/50 rounded px-1 -mx-1 hover:bg-white/5 transition-colors cursor-text`}
@@ -246,8 +240,6 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const [activeId, setActiveId] = useState<string | null>(null);
 
   const SortableItem = ({ id, children, className = "" }: { id: string, children: React.ReactNode, className?: string }) => {
     const {
@@ -287,9 +279,9 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragEnd = (event: any, type: 'sections' | 'experience' | 'education') => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (active.id !== over.id) {
       if (type === 'sections') {
@@ -308,7 +300,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     }
   };
 
-  const renderSection = (type: string, index: number) => {
+  const renderSection = (type: string) => {
     switch (type) {
       case 'experience':
         if (data.experience.length === 0 && !isEditing) return null;
@@ -632,9 +624,9 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
               items={sectionOrder}
               strategy={verticalListSortingStrategy}
             >
-              {sectionOrder.map((type, index) => (
+              {sectionOrder.map((type) => (
                 <SortableItem key={type} id={type}>
-                  {renderSection(type, index)}
+                  {renderSection(type)}
                 </SortableItem>
               ))}
             </SortableContext>
@@ -647,9 +639,9 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         <p className="tracking-widest uppercase mb-2">Designed and Built by AI</p>
         <p>
           Generated with{' '}
-          <a href="/" className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors font-bold`}>
+          <Link href="/" className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors font-bold`}>
             CV TO WEB
-          </a>
+          </Link>
         </p>
       </footer>
     </div>

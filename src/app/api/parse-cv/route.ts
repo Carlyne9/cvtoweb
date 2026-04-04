@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-// @ts-ignore - no types needed for this simple usage
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import { parseCV } from '@/lib/parse-cv';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -40,6 +39,7 @@ export async function POST(request: NextRequest) {
       
       // Extract text
       const textContent = await page.getTextContent();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pageText = textContent.items.map((item: any) => item.str).join(' ');
       cvText += pageText + '\n';
       

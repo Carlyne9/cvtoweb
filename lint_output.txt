@@ -1,0 +1,41 @@
+
+> cvtoweb@0.1.0 lint
+> eslint
+
+
+/Users/carlyne/Development/cvtoweb/src/app/api/parse-cv/route.ts
+   2:1   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  43:53  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+/Users/carlyne/Development/cvtoweb/src/app/edit/[id]/EditClient.tsx
+   14:9   warning  'router' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+   77:6   warning  React Hook useEffect has a missing dependency: 'performSave'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  128:90  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+/Users/carlyne/Development/cvtoweb/src/app/page.tsx
+  29:6  warning  React Hook useCallback has a missing dependency: 'handleFile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  36:6  warning  React Hook useCallback has a missing dependency: 'handleFile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/carlyne/Development/cvtoweb/src/app/preview/[id]/PreviewClient.tsx
+  106:6   warning  React Hook useEffect has a missing dependency: 'performSave'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  171:90  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+/Users/carlyne/Development/cvtoweb/src/components/PortfolioTemplate.tsx
+   11:3   warning  'DragOverlay' is defined but never used                                                                                                                @typescript-eslint/no-unused-vars
+   12:3   warning  'defaultDropAnimationSideEffects' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+   23:31  warning  'useRef' is defined but never used                                                                                                                     @typescript-eslint/no-unused-vars
+   72:9   warning  'moveSection' is assigned a value but never used                                                                                                       @typescript-eslint/no-unused-vars
+   86:18  error    Unexpected any. Specify a different type                                                                                                               @typescript-eslint/no-explicit-any
+  107:18  error    Unexpected any. Specify a different type                                                                                                               @typescript-eslint/no-explicit-any
+  221:15  error    Unexpected any. Specify a different type                                                                                                               @typescript-eslint/no-explicit-any
+  230:21  error    Unexpected any. Specify a different type                                                                                                               @typescript-eslint/no-explicit-any
+  250:10  warning  'activeId' is assigned a value but never used                                                                                                          @typescript-eslint/no-unused-vars
+  290:33  error    Unexpected any. Specify a different type                                                                                                               @typescript-eslint/no-explicit-any
+  311:40  warning  'index' is defined but never used                                                                                                                      @typescript-eslint/no-unused-vars
+  650:11  error    Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/carlyne/Development/cvtoweb/src/lib/parse-cv.ts
+  66:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 22 problems (10 errors, 12 warnings)
+
