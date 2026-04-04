@@ -11,6 +11,7 @@ function PublishedContent() {
   const [portfolioUrl, setPortfolioUrl] = useState(`/portfolio/${username}`);
   const [editUrl, setEditUrl] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setPortfolioUrl(`${window.location.origin}/portfolio/${username}`);
     if (id) {
