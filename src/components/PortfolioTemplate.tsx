@@ -1,4 +1,26 @@
+'use client';
+
 import { PortfolioData } from '@/types/portfolio';
+import { 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  defaultDropAnimationSideEffects
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Props {
   data: PortfolioData;
@@ -90,14 +112,111 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onUpdate(newData);
   };
 
+  const [focusTicket, setFocusTicket] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    if (focusTicket) {
+      const el = document.getElementById(focusTicket.id);
+      if (el) {
+        el.focus();
+        // Place cursor at end for contentEditable
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+      setFocusTicket(null);
+    }
+  }, [focusTicket]);
+
+  const addListItem = (section: 'experience' | 'education' | 'skills', index: number, subIndex?: number) => {
+    if (!onUpdate) return;
+    const newData = { ...data };
+    
+    if (section === 'experience' && typeof subIndex === 'number') {
+      newData.experience[index].bullets.splice(subIndex + 1, 0, "");
+      onUpdate(newData);
+      setFocusTicket({ id: `bullet-${index}-${subIndex + 1}` });
+    } else if (section === 'experience') {
+      newData.experience.splice(index + 1, 0, { 
+        role: "New Role", 
+        company: "New Company", 
+        dates: "Dates", 
+        bullets: [""] 
+      });
+      onUpdate(newData);
+      setFocusTicket({ id: `exp-role-${index + 1}` }); // Need to add these IDs later
+    } else if (section === 'education') {
+      newData.education.splice(index + 1, 0, { 
+        institution: "New Institution", 
+        degree: "Degree", 
+        dates: "Dates" 
+      });
+      onUpdate(newData);
+      setFocusTicket({ id: `edu-inst-${index + 1}` });
+    } else if (section === 'skills') {
+      newData.skills.splice(index + 1, 0, "New Skill");
+      onUpdate(newData);
+      setFocusTicket({ id: `skill-${index + 1}` });
+    }
+  };
+
+  const removeListItem = (section: 'experience' | 'education' | 'skills', index: number, subIndex?: number) => {
+    if (!onUpdate) return;
+    const newData = { ...data };
+    
+    if (section === 'experience' && typeof subIndex === 'number') {
+      if (newData.experience[index].bullets.length <= 1) return; // Don't remove last bullet
+      newData.experience[index].bullets.splice(subIndex, 1);
+      onUpdate(newData);
+      setFocusTicket({ id: `bullet-${index}-${Math.max(0, subIndex - 1)}` });
+    } else if (section === 'experience') {
+      newData.experience.splice(index, 1);
+      onUpdate(newData);
+    } else if (section === 'education') {
+      newData.education.splice(index, 1);
+      onUpdate(newData);
+    } else if (section === 'skills') {
+      newData.skills.splice(index, 1);
+      onUpdate(newData);
+      setFocusTicket({ id: `skill-${Math.max(0, index - 1)}` });
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent, 
+    type: 'bullet' | 'education' | 'skill',
+    idx: number, 
+    subIdx?: number,
+    currentValue?: string
+  ) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (type === 'bullet') addListItem('experience', idx, subIdx);
+      else if (type === 'education') addListItem('education', idx);
+      else if (type === 'skill') addListItem('skills', idx);
+    } else if (e.key === 'Backspace' && currentValue === "") {
+      e.preventDefault();
+      if (type === 'bullet') removeListItem('experience', idx, subIdx);
+      else if (type === 'skill') removeListItem('skills', idx);
+      // For education, we might not want to delete accidentally on empty field
+    }
+  };
+
   const EditableText = ({ 
     value, 
     onSave, 
+    onKeyDown,
+    id,
     className = "", 
     element: Element = "span" 
   }: { 
     value: string, 
     onSave: (val: string) => void, 
+    onKeyDown?: (e: React.KeyboardEvent) => void,
+    id?: string,
     className?: string,
     element?: any
   }) => {
@@ -105,9 +224,11 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     
     return (
       <Element
+        id={id}
         contentEditable
         suppressContentEditableWarning
         onBlur={(e: any) => onSave(e.target.innerText)}
+        onKeyDown={onKeyDown}
         className={`${className} outline-none focus:ring-2 focus:ring-blue-500/50 rounded px-1 -mx-1 hover:bg-white/5 transition-colors cursor-text`}
       >
         {value}
@@ -115,30 +236,76 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     );
   };
 
-  const ReorderControls = ({ index }: { index: number }) => {
-    if (!isEditing) return null;
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const SortableItem = ({ id, children, className = "" }: { id: string, children: React.ReactNode, className?: string }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging
+    } = useSortable({ id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 100 : undefined,
+      opacity: isDragging ? 0.4 : 1,
+    };
+
     return (
-      <div className="absolute -left-12 top-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => moveSection(index, 'up')}
-          disabled={index === 0}
-          className="p-1 hover:bg-slate-800 rounded disabled:opacity-20"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-        <button
-          onClick={() => moveSection(index, 'down')}
-          disabled={index === sectionOrder.length - 1}
-          className="p-1 hover:bg-slate-800 rounded disabled:opacity-20"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        className={`relative group/block ${className} ${isDragging ? 'z-50' : ''}`}
+      >
+        {isEditing && (
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="absolute -left-8 top-1 opacity-0 group-hover/block:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-slate-300 z-30"
+            title="Drag to reorder"
+          >
+            <GripVertical size={18} />
+          </div>
+        )}
+        {children}
       </div>
     );
+  };
+
+  const handleDragEnd = (event: any, type: 'sections' | 'experience' | 'education') => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (active.id !== over.id) {
+      if (type === 'sections') {
+        const oldIndex = sectionOrder.indexOf(active.id);
+        const newIndex = sectionOrder.indexOf(over.id);
+        handleUpdate({ ...data, sectionOrder: arrayMove(sectionOrder, oldIndex, newIndex) });
+      } else if (type === 'experience') {
+        const oldIndex = parseInt(active.id.split('-')[1]);
+        const newIndex = parseInt(over.id.split('-')[1]);
+        handleUpdate({ ...data, experience: arrayMove(data.experience, oldIndex, newIndex) });
+      } else if (type === 'education') {
+        const oldIndex = parseInt(active.id.split('-')[1]);
+        const newIndex = parseInt(over.id.split('-')[1]);
+        handleUpdate({ ...data, education: arrayMove(data.education, oldIndex, newIndex) });
+      }
+    }
   };
 
   const renderSection = (type: string, index: number) => {
@@ -146,165 +313,252 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
       case 'experience':
         if (data.experience.length === 0 && !isEditing) return null;
         return (
-          <section key="experience" className="mb-16 relative group">
-            <ReorderControls index={index} />
+          <section key="experience" className="mb-16">
             <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Experience</h2>
-            <div className="space-y-12">
-              {data.experience.map((exp, idx) => (
-                <div key={idx}>
-                  <div className="mb-4">
-                    <EditableText 
-                      element="h3" 
-                      value={exp.role} 
-                      onSave={(v) => {
-                        const newExp = [...data.experience];
-                        newExp[idx].role = v;
-                        handleUpdate({ ...data, experience: newExp });
-                      }} 
-                      className="text-lg font-medium mb-1 block"
-                    />
-                    <EditableText 
-                      element="p" 
-                      value={exp.company} 
-                      onSave={(v) => {
-                        const newExp = [...data.experience];
-                        newExp[idx].company = v;
-                        handleUpdate({ ...data, experience: newExp });
-                      }} 
-                      className={`${themeStyles.muted} mb-2 block`}
-                    />
-                  </div>
-                  <div className={`flex gap-2 text-sm ${themeStyles.label} mb-4`}>
-                    <EditableText 
-                      value={exp.dates} 
-                      onSave={(v) => {
-                        const newExp = [...data.experience];
-                        newExp[idx].dates = v;
-                        handleUpdate({ ...data, experience: newExp });
-                      }} 
-                    />
-                    {exp.location && (
-                      <>
-                        <span>—</span>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e) => handleDragEnd(e, 'experience')}
+            >
+              <SortableContext
+                items={data.experience.map((_, i) => `exp-${i}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-12">
+                  {data.experience.map((exp, idx) => (
+                    <SortableItem key={`exp-${idx}`} id={`exp-${idx}`}>
+                      <div className="mb-4">
                         <EditableText 
-                          value={exp.location} 
+                          id={`exp-role-${idx}`}
+                          element="h3" 
+                          value={exp.role} 
                           onSave={(v) => {
                             const newExp = [...data.experience];
-                            newExp[idx].location = v;
+                            newExp[idx].role = v;
+                            handleUpdate({ ...data, experience: newExp });
+                          }} 
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addListItem('experience', idx);
+                            }
+                          }}
+                          className="text-lg font-medium mb-1 block"
+                        />
+                        <EditableText 
+                          element="p" 
+                          value={exp.company} 
+                          onSave={(v) => {
+                            const newExp = [...data.experience];
+                            newExp[idx].company = v;
+                            handleUpdate({ ...data, experience: newExp });
+                          }} 
+                          className={`${themeStyles.muted} mb-2 block`}
+                        />
+                      </div>
+                      <div className={`flex gap-2 text-sm ${themeStyles.label} mb-4`}>
+                        <EditableText 
+                          value={exp.dates} 
+                          onSave={(v) => {
+                            const newExp = [...data.experience];
+                            newExp[idx].dates = v;
                             handleUpdate({ ...data, experience: newExp });
                           }} 
                         />
-                      </>
-                    )}
-                  </div>
-                  {exp.bullets.length > 0 && (
-                    <ul className="space-y-3">
-                      {exp.bullets.map((bullet, bulletIdx) => (
-                        <li key={bulletIdx} className={`${themeStyles.muted} text-sm flex gap-3`}>
-                          <span className={`${themeStyles.label} mt-1`}>•</span>
-                          <EditableText 
-                            value={bullet} 
-                            onSave={(v) => {
-                              const newExp = [...data.experience];
-                              newExp[idx].bullets[bulletIdx] = v;
-                              handleUpdate({ ...data, experience: newExp });
-                            }} 
-                            className="flex-1"
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                        {exp.location && (
+                          <>
+                            <span>—</span>
+                            <EditableText 
+                              value={exp.location} 
+                              onSave={(v) => {
+                                const newExp = [...data.experience];
+                                newExp[idx].location = v;
+                                handleUpdate({ ...data, experience: newExp });
+                              }} 
+                            />
+                          </>
+                        )}
+                      </div>
+                      {exp.bullets.length > 0 && (
+                        <ul className="space-y-3">
+                          {exp.bullets.map((bullet, bulletIdx) => (
+                            <li key={bulletIdx} className={`${themeStyles.muted} text-sm flex gap-3 group/bullet relative`}>
+                              <span className={`${themeStyles.label} mt-1`}>•</span>
+                              <EditableText 
+                                id={`bullet-${idx}-${bulletIdx}`}
+                                value={bullet} 
+                                onSave={(v) => {
+                                  const newExp = [...data.experience];
+                                  newExp[idx].bullets[bulletIdx] = v;
+                                  handleUpdate({ ...data, experience: newExp });
+                                }} 
+                                onKeyDown={(e) => handleKeyDown(e, 'bullet', idx, bulletIdx, bullet)}
+                                className="flex-1"
+                              />
+                              {isEditing && (
+                                <div className="absolute -left-10 top-0 flex gap-1 opacity-0 group-hover/bullet:opacity-100 transition-opacity">
+                                  <button 
+                                    onClick={() => addListItem('experience', idx, bulletIdx)}
+                                    className="p-1 hover:bg-blue-500/20 rounded text-blue-500 transition-colors"
+                                    title="Add bullet below"
+                                  >
+                                    <Plus size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => removeListItem('experience', idx, bulletIdx)}
+                                    className="p-1 hover:bg-red-500/20 rounded text-red-500 transition-colors"
+                                    title="Remove bullet"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </SortableItem>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </section>
         );
       case 'education':
         if (data.education.length === 0 && !isEditing) return null;
         return (
-          <section key="education" className="mb-16 relative group">
-            <ReorderControls index={index} />
+          <section key="education" className="mb-16">
             <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Education</h2>
-            <div className="space-y-8">
-              {data.education.map((edu, idx) => (
-                <div key={idx}>
-                  <EditableText 
-                    element="h3" 
-                    value={edu.institution} 
-                    onSave={(v) => {
-                      const newEdu = [...data.education];
-                      newEdu[idx].institution = v;
-                      handleUpdate({ ...data, education: newEdu });
-                    }} 
-                    className="text-lg font-medium mb-1 block"
-                  />
-                  <div className={`${themeStyles.muted} flex gap-1 flex-wrap`}>
-                    <EditableText 
-                      value={edu.degree} 
-                      onSave={(v) => {
-                        const newEdu = [...data.education];
-                        newEdu[idx].degree = v;
-                        handleUpdate({ ...data, education: newEdu });
-                      }} 
-                    />
-                    {edu.field && (
-                      <>
-                        <span>in</span>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e) => handleDragEnd(e, 'education')}
+            >
+              <SortableContext
+                items={data.education.map((_, i) => `edu-${i}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-8">
+                  {data.education.map((edu, idx) => (
+                    <SortableItem key={`edu-${idx}`} id={`edu-${idx}`}>
+                      <EditableText 
+                        id={`edu-inst-${idx}`}
+                        element="h3" 
+                        value={edu.institution} 
+                        onSave={(v) => {
+                          const newEdu = [...data.education];
+                          newEdu[idx].institution = v;
+                          handleUpdate({ ...data, education: newEdu });
+                        }} 
+                        onKeyDown={(e) => handleKeyDown(e, 'education', idx)}
+                        className="text-lg font-medium mb-1 block"
+                      />
+                      {isEditing && (
+                        <div className="absolute -left-10 top-0 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => addListItem('education', idx)}
+                            className="p-1 hover:bg-blue-500/20 rounded text-blue-500 transition-colors"
+                            title="Add education entry below"
+                          >
+                            <Plus size={16} />
+                          </button>
+                          <button 
+                            onClick={() => removeListItem('education', idx)}
+                            className="p-1 hover:bg-red-500/20 rounded text-red-500 transition-colors"
+                            title="Remove education entry"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                      <div className={`${themeStyles.muted} flex gap-1 flex-wrap`}>
                         <EditableText 
-                          value={edu.field} 
+                          value={edu.degree} 
                           onSave={(v) => {
                             const newEdu = [...data.education];
-                            newEdu[idx].field = v;
+                            newEdu[idx].degree = v;
                             handleUpdate({ ...data, education: newEdu });
                           }} 
                         />
-                      </>
-                    )}
-                  </div>
-                  <div className={`text-sm ${themeStyles.label} mt-2 flex gap-2`}>
-                    <EditableText 
-                      value={edu.dates} 
-                      onSave={(v) => {
-                        const newEdu = [...data.education];
-                        newEdu[idx].dates = v;
-                        handleUpdate({ ...data, education: newEdu });
-                      }} 
-                    />
-                    {edu.location && (
-                      <>
-                        <span>•</span>
+                        {edu.field && (
+                          <>
+                            <span>in</span>
+                            <EditableText 
+                              value={edu.field} 
+                              onSave={(v) => {
+                                const newEdu = [...data.education];
+                                newEdu[idx].field = v;
+                                handleUpdate({ ...data, education: newEdu });
+                              }} 
+                            />
+                          </>
+                        )}
+                      </div>
+                      <div className={`text-sm ${themeStyles.label} mt-2 flex gap-2`}>
                         <EditableText 
-                          value={edu.location} 
+                          value={edu.dates} 
                           onSave={(v) => {
                             const newEdu = [...data.education];
-                            newEdu[idx].location = v;
+                            newEdu[idx].dates = v;
                             handleUpdate({ ...data, education: newEdu });
                           }} 
                         />
-                      </>
-                    )}
-                  </div>
+                        {edu.location && (
+                          <>
+                            <span>•</span>
+                            <EditableText 
+                              value={edu.location} 
+                              onSave={(v) => {
+                                const newEdu = [...data.education];
+                                newEdu[idx].location = v;
+                                handleUpdate({ ...data, education: newEdu });
+                              }} 
+                            />
+                          </>
+                        )}
+                      </div>
+                    </SortableItem>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </section>
         );
       case 'skills':
         if (data.skills.length === 0 && !isEditing) return null;
         return (
-          <section key="skills" className="relative group">
-            <ReorderControls index={index} />
+          <section key="skills">
             <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Skills</h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
               {data.skills.map((skill, idx) => (
-                <EditableText
-                  key={idx}
-                  value={skill}
-                  onSave={(v) => handleArrayUpdate('skills', idx, v)}
-                  className={`px-4 py-2 ${themeStyles.accentBg} ${themeStyles.muted} rounded text-sm border ${themeStyles.border} hover:border-gray-700 transition-colors inline-block`}
-                />
+                <div key={idx} className="group/skill relative">
+                  <EditableText
+                    id={`skill-${idx}`}
+                    value={skill}
+                    onSave={(v) => handleArrayUpdate('skills', idx, v)}
+                    onKeyDown={(e) => handleKeyDown(e, 'skill', idx, undefined, skill)}
+                    className={`px-4 py-2 ${themeStyles.accentBg} ${themeStyles.muted} rounded text-sm border ${themeStyles.border} hover:border-gray-700 transition-colors inline-block`}
+                  />
+                  {isEditing && (
+                    <button 
+                      onClick={() => removeListItem('skills', idx)}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover/skill:opacity-100 transition-opacity shadow-lg scale-75"
+                      title="Remove skill"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  )}
+                </div>
               ))}
+              {isEditing && (
+                <button 
+                  onClick={() => addListItem('skills', data.skills.length - 1)}
+                  className={`px-4 py-2 border-2 border-dashed ${themeStyles.border} ${themeStyles.muted} rounded text-sm hover:border-blue-500 hover:text-blue-500 transition-all flex items-center gap-2 group/add-skill`}
+                >
+                  <Plus size={14} className="group-hover/add-skill:rotate-90 transition-transform" />
+                  Add Skill
+                </button>
+              )}
             </div>
           </section>
         );
@@ -369,7 +623,22 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         )}
 
         <div className="space-y-24">
-          {sectionOrder.map((type, index) => renderSection(type, index))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(e) => handleDragEnd(e, 'sections')}
+          >
+            <SortableContext
+              items={sectionOrder}
+              strategy={verticalListSortingStrategy}
+            >
+              {sectionOrder.map((type, index) => (
+                <SortableItem key={type} id={type}>
+                  {renderSection(type, index)}
+                </SortableItem>
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       </main>
 

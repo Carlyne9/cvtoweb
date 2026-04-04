@@ -1,11 +1,11 @@
 import { Resend } from 'resend';
-import { getPortfolioUrl, getEditUrl } from './urls';
+import { getPortfolioUrl, getLiveEditUrl } from './urls';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function sendWelcomeEmail(email: string, username: string, portfolioId: string) {
   const publicUrl = getPortfolioUrl(username);
-  const editUrl = getEditUrl(portfolioId);
+  const editUrl = getLiveEditUrl(portfolioId);
 
   // If no API key is provided, just simulate the email send
   if (!resend) {
@@ -38,8 +38,12 @@ export async function sendWelcomeEmail(email: string, username: string, portfoli
           </div>
 
           <h3 style="color: #0f172a;">Need to make changes?</h3>
-          <p>You can always come back and update your portfolio layout or details using your private edit link. <strong>Keep this link safe!</strong></p>
-          <p><a href="${editUrl}" style="color: #3b82f6;">Click here to access your draft settings</a></p>
+          <p>You can always come back and update your portfolio at any time using your private edit link. <strong>Keep this link safe!</strong></p>
+          <p>
+            <a href="${editUrl}" style="background-color: #1e293b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              ✏️ Edit My Portfolio
+            </a>
+          </p>
 
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 40px 0;" />
           <p style="font-size: 12px; color: #94a3b8; text-align: center;">

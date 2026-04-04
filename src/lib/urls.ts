@@ -35,6 +35,18 @@ export function getEditUrl(portfolioId: string): string {
   return `${protocol}://${appDomain}/preview/${portfolioId}`;
 }
 
+/**
+ * Returns the dedicated edit URL for returning users who already have a live site.
+ * Points to /edit/[id] — a focused editor with no publish flow.
+ */
+export function getLiveEditUrl(portfolioId: string): string {
+  const appDomain = getAppDomain();
+  const isLocal = appDomain.includes('localhost') || appDomain.includes('127.0.0.1');
+  const protocol = isLocal ? 'http' : 'https';
+
+  return `${protocol}://${appDomain}/edit/${portfolioId}`;
+}
+
 export function isSubdomainEnabled(): boolean {
   const appDomain = getAppDomain();
   const isVercel = appDomain.includes('.vercel.app') || appDomain.includes('.vercel.sh');
