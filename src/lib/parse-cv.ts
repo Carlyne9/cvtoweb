@@ -1,12 +1,12 @@
 import OpenAI from 'openai';
 import { PortfolioData } from '@/types/portfolio';
 
-const openai = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY!,
-});
-
 export async function parseCV(cvText: string): Promise<PortfolioData> {
+  const openai = new OpenAI({
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY || "dummy_key_to_prevent_build_crash",
+  });
+
   const prompt = `You are a CV/resume parser. Extract the following information from the CV text and return it as valid JSON only, with no additional text or explanation.
 
 The JSON structure must be:
