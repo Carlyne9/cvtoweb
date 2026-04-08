@@ -20,6 +20,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { LinkedText } from '@/components/LinkedText';
+import { mailtoHref, normalizeExternalHref } from '@/lib/external-links';
 
 interface Props {
   data: PortfolioData;
@@ -215,6 +217,8 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onKeyDown,
     nextFocusId,
     id,
+    linkify,
+    linkClassName,
     className = "", 
     element: Element = "span" 
   }: { 
@@ -223,11 +227,22 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onKeyDown?: (e: React.KeyboardEvent) => void,
     nextFocusId?: string,
     id?: string,
+    linkify?: boolean,
+    linkClassName?: string,
     className?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     element?: any
   }) => {
-    if (!isEditing) return <Element className={className}>{value}</Element>;
+    if (!isEditing) {
+      if (linkify) {
+        return (
+          <Element className={className}>
+            <LinkedText text={value} linkClassName={linkClassName} />
+          </Element>
+        );
+      }
+      return <Element className={className}>{value}</Element>;
+    }
     
     return (
       <Element
@@ -430,6 +445,8 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                                     }
                                   )
                                 }
+                                linkify
+                                linkClassName={`${themeStyles.accent} underline underline-offset-2`}
                                 className="flex-1"
                               />
                               {isEditing && (
@@ -584,6 +601,8 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                         handleArrayUpdate('skills', idx, v)
                       )
                     }
+                    linkify
+                    linkClassName={`${themeStyles.accent} underline underline-offset-2`}
                     className={`px-4 py-2 ${themeStyles.accentBg} ${themeStyles.muted} rounded text-sm border ${themeStyles.border} hover:border-gray-700 transition-colors inline-block`}
                   />
                   {isEditing && (
@@ -640,21 +659,83 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
           {data.contact.email && (
             <div className="flex items-center gap-3">
               <span className={themeStyles.label}>Email</span>
-              <EditableText 
-                value={data.contact.email} 
-                onSave={(v) => handleChange('contact.email', v)} 
-                className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors border-b ${themeStyles.border}`}
-              />
+              {isEditing ? (
+                <EditableText
+                  value={data.contact.email}
+                  onSave={(v) => handleChange('contact.email', v)}
+                  className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors border-b ${themeStyles.border}`}
+                />
+              ) : mailtoHref(data.contact.email) ? (
+                <a
+                  href={mailtoHref(data.contact.email)!}
+                  className={`${themeStyles.muted} ${themeStyles.accent} transition-colors border-b ${themeStyles.border}`}
+                >
+                  {data.contact.email}
+                </a>
+              ) : (
+                <span className={`${themeStyles.muted} border-b ${themeStyles.border}`}>
+                  <LinkedText
+                    text={data.contact.email}
+                    linkClassName={`${themeStyles.accent} underline underline-offset-2`}
+                  />
+                </span>
+              )}
             </div>
           )}
           {data.contact.linkedin && (
             <div className="flex items-center gap-3">
               <span className={themeStyles.label}>LinkedIn</span>
-              <EditableText 
-                value={data.contact.linkedin} 
-                onSave={(v) => handleChange('contact.linkedin', v)} 
-                className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors border-b ${themeStyles.border}`}
-              />
+              {isEditing ? (
+                <EditableText
+                  value={data.contact.linkedin}
+                  onSave={(v) => handleChange('contact.linkedin', v)}
+                  className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors border-b ${themeStyles.border}`}
+                />
+              ) : normalizeExternalHref(data.contact.linkedin) ? (
+                <a
+                  href={normalizeExternalHref(data.contact.linkedin)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${themeStyles.muted} ${themeStyles.accent} transition-colors border-b ${themeStyles.border}`}
+                >
+                  {data.contact.linkedin}
+                </a>
+              ) : (
+                <span className={`${themeStyles.muted} border-b ${themeStyles.border}`}>
+                  <LinkedText
+                    text={data.contact.linkedin}
+                    linkClassName={`${themeStyles.accent} underline underline-offset-2`}
+                  />
+                </span>
+              )}
+            </div>
+          )}
+          {data.contact.website && (
+            <div className="flex items-center gap-3">
+              <span className={themeStyles.label}>Website</span>
+              {isEditing ? (
+                <EditableText
+                  value={data.contact.website}
+                  onSave={(v) => handleChange('contact.website', v)}
+                  className={`${themeStyles.muted} hover:${themeStyles.text} transition-colors border-b ${themeStyles.border}`}
+                />
+              ) : normalizeExternalHref(data.contact.website) ? (
+                <a
+                  href={normalizeExternalHref(data.contact.website)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${themeStyles.muted} ${themeStyles.accent} transition-colors border-b ${themeStyles.border}`}
+                >
+                  {data.contact.website}
+                </a>
+              ) : (
+                <span className={`${themeStyles.muted} border-b ${themeStyles.border}`}>
+                  <LinkedText
+                    text={data.contact.website}
+                    linkClassName={`${themeStyles.accent} underline underline-offset-2`}
+                  />
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -669,6 +750,8 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
               element="p" 
               value={data.summary} 
               onSave={(v) => handleChange('summary', v)} 
+              linkify
+              linkClassName={`${themeStyles.accent} underline underline-offset-2`}
               className={`text-xl leading-relaxed font-light ${themeStyles.text} opacity-90`}
             />
           </section>

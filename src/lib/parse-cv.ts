@@ -40,6 +40,8 @@ The JSON structure must be:
 
 If any field is not found in the CV, use an empty string or empty array as appropriate. Do not make up information that isn't in the CV, except for the summary which you can craft based on the experience and skills if one isn't provided.
 
+If the CV text includes explicit URLs (http(s) or www), preserve them verbatim in the summary, experience bullets, skills, or contact fields where they belong. For contact.linkedin and contact.website, store the URL or domain as it appears (you may normalize to a single line without spaces).
+
 CV Text:
 ${cvText}
 
