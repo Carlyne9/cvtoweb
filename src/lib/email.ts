@@ -2,9 +2,14 @@ import { Resend } from 'resend';
 import { getPortfolioUrl, getLiveEditUrl } from './urls';
 
 
-export async function sendWelcomeEmail(email: string, username: string, portfolioId: string) {
+export async function sendWelcomeEmail(
+  email: string,
+  username: string,
+  portfolioId: string,
+  editToken: string
+) {
   const publicUrl = getPortfolioUrl(username);
-  const editUrl = getLiveEditUrl(portfolioId);
+  const editUrl = getLiveEditUrl(portfolioId, editToken);
 
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 

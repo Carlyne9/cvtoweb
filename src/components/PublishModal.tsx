@@ -5,12 +5,19 @@ import { getAppDomain, isSubdomainEnabled } from '@/lib/urls';
 
 interface Props {
   portfolioId: string;
+  editToken: string;
   suggestedUsername: string;
   onClose: () => void;
   onSuccess: (username: string) => void;
 }
 
-export default function PublishModal({ portfolioId, suggestedUsername, onClose, onSuccess }: Props) {
+export default function PublishModal({
+  portfolioId,
+  editToken,
+  suggestedUsername,
+  onClose,
+  onSuccess,
+}: Props) {
   const [username, setUsername] = useState(suggestedUsername);
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +37,7 @@ export default function PublishModal({ portfolioId, suggestedUsername, onClose, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           portfolioId,
+          editToken,
           username: username.toLowerCase(),
           email,
         }),

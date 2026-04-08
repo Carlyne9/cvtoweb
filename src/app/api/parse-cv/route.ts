@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import { parseCV } from '@/lib/parse-cv';
 import { supabaseAdmin } from '@/lib/supabase';
+import { validatePortfolioData } from '@/lib/validation';
+import { generateEditToken } from '@/lib/edit-token';
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,12 +85,19 @@ export async function POST(request: NextRequest) {
 
     // Parse CV with AI
     const portfolioData = await parseCV(cvText);
+    const validation = validatePortfolioData(portfolioData);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: `Parsed CV data is invalid: ${validation.error}` },
+        { status: 422 }
+      );
+    }
 
     // Create a temporary portfolio entry (not published yet)
     const { data: portfolio, error } = await supabaseAdmin
       .from('portfolios')
       .insert({
-        portfolio_data: portfolioData,
+        portfolio_data: validation.data,
         template: 'default',
         is_published: false,
       })
@@ -106,7 +115,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       portfolioId: portfolio.id,
-      data: portfolioData,
+      editToken: generateEditToken(portfolio.id),
+      data: validation.data,
     });
 
   } catch (error) {

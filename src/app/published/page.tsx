@@ -8,15 +8,16 @@ function PublishedContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username');
   const id = searchParams.get('id');
+  const token = searchParams.get('token');
   const [portfolioUrl, setPortfolioUrl] = useState(`/portfolio/${username}`);
   const [editUrl, setEditUrl] = useState('');
 
   useEffect(() => {
     setPortfolioUrl(`${window.location.origin}/portfolio/${username}`);
-    if (id) {
-      setEditUrl(`${window.location.origin}/edit/${id}`);
+    if (id && token) {
+      setEditUrl(`${window.location.origin}/edit/${id}?token=${encodeURIComponent(token)}`);
     }
-  }, [username, id]);
+  }, [username, id, token]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -59,7 +60,7 @@ function PublishedContent() {
         </div>
 
         {/* Secret Edit URL Display */}
-        {id && (
+        {id && token && (
           <div className="bg-yellow-900/40 border border-yellow-700/50 rounded-xl p-4 mb-6">
             <p className="text-yellow-400 text-sm mb-1 font-bold flex items-center justify-center gap-1">
                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>

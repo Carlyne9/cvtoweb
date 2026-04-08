@@ -1,14 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isValidUuid, validatePortfolioData } from '@/lib/validation';
+import { verifyEditToken } from '@/lib/edit-token';
 
 export async function POST(request: NextRequest) {
   try {
-    const { portfolioId, portfolioData } = await request.json();
+    const { portfolioId, editToken, portfolioData } = await request.json();
 
-    if (!portfolioId || !portfolioData) {
+    if (!portfolioId || !editToken || !portfolioData) {
       return NextResponse.json(
-        { error: 'Missing required fields: portfolioId, portfolioData' },
+        { error: 'Missing required fields: portfolioId, editToken, portfolioData' },
         { status: 400 }
+      );
+    }
+
+    if (typeof portfolioId !== 'string' || !isValidUuid(portfolioId)) {
+      return NextResponse.json(
+        { error: 'Invalid portfolioId format' },
+        { status: 400 }
+      );
+    }
+
+    if (!verifyEditToken(portfolioId, editToken)) {
+      return NextResponse.json(
+        { error: 'Invalid edit token' },
+        { status: 403 }
+      );
+    }
+
+    const validation = validatePortfolioData(portfolioData);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: `Invalid portfolio data: ${validation.error}` },
+        { status: 422 }
       );
     }
 
@@ -16,7 +40,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabaseAdmin
       .from('portfolios')
       .update({
-        portfolio_data: portfolioData,
+        portfolio_data: validation.data,
         updated_at: new Date().toISOString(),
       })
       .eq('id', portfolioId);

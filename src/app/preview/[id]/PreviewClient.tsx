@@ -9,9 +9,10 @@ import { getPortfolioUrl } from '@/lib/urls';
 
 interface Props {
   portfolio: Portfolio;
+  editToken: string;
 }
 
-export default function PreviewClient({ portfolio }: Props) {
+export default function PreviewClient({ portfolio, editToken }: Props) {
   const router = useRouter();
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,7 +25,9 @@ export default function PreviewClient({ portfolio }: Props) {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handlePublishSuccess = (username: string) => {
-    router.push(`/published?username=${username}&id=${portfolio.id}`);
+    router.push(
+      `/published?username=${username}&id=${portfolio.id}&token=${encodeURIComponent(editToken)}`
+    );
   };
 
   // The core save function used by both auto-save and manual save
@@ -42,11 +45,15 @@ export default function PreviewClient({ portfolio }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           portfolioId: portfolio.id,
+          editToken,
           portfolioData: data,
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || 'Failed to save');
+      }
       
       setSaveStatus('success');
       
@@ -284,6 +291,7 @@ export default function PreviewClient({ portfolio }: Props) {
       {showPublishModal && (
         <PublishModal
           portfolioId={portfolio.id}
+          editToken={editToken}
           suggestedUsername={localData.name
             .toLowerCase()
             .replace(/[^a-z0-9]/g, '-')

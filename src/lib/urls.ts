@@ -27,24 +27,26 @@ export function getPortfolioUrl(username: string): string {
   return `https://${lowerUsername}.${appDomain}`;
 }
 
-export function getEditUrl(portfolioId: string): string {
+export function getEditUrl(portfolioId: string, editToken?: string): string {
   const appDomain = getAppDomain();
   const isLocal = appDomain.includes('localhost') || appDomain.includes('127.0.0.1');
   const protocol = isLocal ? 'http' : 'https';
-  
-  return `${protocol}://${appDomain}/preview/${portfolioId}`;
+
+  const tokenSuffix = editToken ? `?token=${encodeURIComponent(editToken)}` : '';
+  return `${protocol}://${appDomain}/preview/${portfolioId}${tokenSuffix}`;
 }
 
 /**
  * Returns the dedicated edit URL for returning users who already have a live site.
  * Points to /edit/[id] — a focused editor with no publish flow.
  */
-export function getLiveEditUrl(portfolioId: string): string {
+export function getLiveEditUrl(portfolioId: string, editToken?: string): string {
   const appDomain = getAppDomain();
   const isLocal = appDomain.includes('localhost') || appDomain.includes('127.0.0.1');
   const protocol = isLocal ? 'http' : 'https';
+  const tokenSuffix = editToken ? `?token=${encodeURIComponent(editToken)}` : '';
 
-  return `${protocol}://${appDomain}/edit/${portfolioId}`;
+  return `${protocol}://${appDomain}/edit/${portfolioId}${tokenSuffix}`;
 }
 
 export function isSubdomainEnabled(): boolean {

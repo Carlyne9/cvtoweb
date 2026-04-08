@@ -68,6 +68,9 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     onUpdate?.(newData);
   };
 
+  const getEditableText = (event: React.KeyboardEvent<HTMLElement>) =>
+    event.currentTarget.innerText.replace(/\n/g, ' ').trim();
+
   const handleChange = (path: string, value: string) => {
     if (!onUpdate) return;
 
@@ -122,6 +125,12 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
       setFocusTicket(null);
     }
   }, [focusTicket]);
+
+  useEffect(() => {
+    if (isEditing) {
+      setFocusTicket({ id: 'profile-name' });
+    }
+  }, [isEditing]);
 
   const addListItem = (section: 'experience' | 'education' | 'skills', index: number, subIndex?: number) => {
     if (!onUpdate) return;
@@ -182,14 +191,17 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     type: 'bullet' | 'education' | 'skill',
     idx: number, 
     subIdx?: number,
-    currentValue?: string
+    currentValue?: string,
+    onSave?: (value: string) => void
   ) => {
+    const liveValue = getEditableText(e as React.KeyboardEvent<HTMLElement>);
     if (e.key === 'Enter') {
       e.preventDefault();
+      onSave?.(liveValue);
       if (type === 'bullet') addListItem('experience', idx, subIdx);
       else if (type === 'education') addListItem('education', idx);
       else if (type === 'skill') addListItem('skills', idx);
-    } else if (e.key === 'Backspace' && currentValue === "") {
+    } else if (e.key === 'Backspace' && (liveValue === "" || currentValue === "")) {
       e.preventDefault();
       if (type === 'bullet') removeListItem('experience', idx, subIdx);
       else if (type === 'skill') removeListItem('skills', idx);
@@ -201,6 +213,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     value, 
     onSave, 
     onKeyDown,
+    nextFocusId,
     id,
     className = "", 
     element: Element = "span" 
@@ -208,6 +221,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     value: string, 
     onSave: (val: string) => void, 
     onKeyDown?: (e: React.KeyboardEvent) => void,
+    nextFocusId?: string,
     id?: string,
     className?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,7 +236,20 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         suppressContentEditableWarning
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onBlur={(e: any) => onSave(e.target.innerText)}
-        onKeyDown={onKeyDown}
+        onKeyDown={(e) => {
+          if (onKeyDown) {
+            onKeyDown(e);
+            return;
+          }
+
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onSave(getEditableText(e as React.KeyboardEvent<HTMLElement>));
+            if (nextFocusId) {
+              setFocusTicket({ id: nextFocusId });
+            }
+          }
+        }}
         className={`${className} outline-none focus:ring-2 focus:ring-blue-500/50 rounded px-1 -mx-1 hover:bg-white/5 transition-colors cursor-text`}
       >
         {value}
@@ -332,12 +359,16 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              addListItem('experience', idx);
+                              const newExp = [...data.experience];
+                              newExp[idx].role = getEditableText(e as React.KeyboardEvent<HTMLElement>);
+                              handleUpdate({ ...data, experience: newExp });
+                              setFocusTicket({ id: `exp-company-${idx}` });
                             }
                           }}
                           className="text-lg font-medium mb-1 block"
                         />
                         <EditableText 
+                          id={`exp-company-${idx}`}
                           element="p" 
                           value={exp.company} 
                           onSave={(v) => {
@@ -345,6 +376,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                             newExp[idx].company = v;
                             handleUpdate({ ...data, experience: newExp });
                           }} 
+                          nextFocusId={`bullet-${idx}-0`}
                           className={`${themeStyles.muted} mb-2 block`}
                         />
                       </div>
@@ -384,7 +416,20 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                                   newExp[idx].bullets[bulletIdx] = v;
                                   handleUpdate({ ...data, experience: newExp });
                                 }} 
-                                onKeyDown={(e) => handleKeyDown(e, 'bullet', idx, bulletIdx, bullet)}
+                                onKeyDown={(e) =>
+                                  handleKeyDown(
+                                    e,
+                                    'bullet',
+                                    idx,
+                                    bulletIdx,
+                                    bullet,
+                                    (v) => {
+                                      const newExp = [...data.experience];
+                                      newExp[idx].bullets[bulletIdx] = v;
+                                      handleUpdate({ ...data, experience: newExp });
+                                    }
+                                  )
+                                }
                                 className="flex-1"
                               />
                               {isEditing && (
@@ -442,7 +487,13 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                           newEdu[idx].institution = v;
                           handleUpdate({ ...data, education: newEdu });
                         }} 
-                        onKeyDown={(e) => handleKeyDown(e, 'education', idx)}
+                        onKeyDown={(e) =>
+                          handleKeyDown(e, 'education', idx, undefined, edu.institution, (v) => {
+                            const newEdu = [...data.education];
+                            newEdu[idx].institution = v;
+                            handleUpdate({ ...data, education: newEdu });
+                          })
+                        }
                         className="text-lg font-medium mb-1 block"
                       />
                       {isEditing && (
@@ -528,7 +579,11 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                     id={`skill-${idx}`}
                     value={skill}
                     onSave={(v) => handleArrayUpdate('skills', idx, v)}
-                    onKeyDown={(e) => handleKeyDown(e, 'skill', idx, undefined, skill)}
+                    onKeyDown={(e) =>
+                      handleKeyDown(e, 'skill', idx, undefined, skill, (v) =>
+                        handleArrayUpdate('skills', idx, v)
+                      )
+                    }
                     className={`px-4 py-2 ${themeStyles.accentBg} ${themeStyles.muted} rounded text-sm border ${themeStyles.border} hover:border-gray-700 transition-colors inline-block`}
                   />
                   {isEditing && (
@@ -564,15 +619,19 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
       {/* Header */}
       <header className="max-w-4xl mx-auto px-6 pt-24 pb-12">
         <EditableText 
+          id="profile-name"
           element="h1" 
           value={data.name} 
           onSave={(v) => handleChange('name', v)} 
+          nextFocusId="profile-title"
           className="text-6xl font-extralight mb-6 tracking-tight block"
         />
         <EditableText 
+          id="profile-title"
           element="p" 
           value={data.title} 
           onSave={(v) => handleChange('title', v)} 
+          nextFocusId="profile-summary"
           className={`text-2xl ${themeStyles.muted} mb-12 block font-light`}
         />
 
@@ -606,6 +665,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         {data.summary && (
           <section className="mb-24">
             <EditableText 
+              id="profile-summary"
               element="p" 
               value={data.summary} 
               onSave={(v) => handleChange('summary', v)} 

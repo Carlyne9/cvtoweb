@@ -7,9 +7,10 @@ import { getPortfolioUrl } from '@/lib/urls';
 
 interface Props {
   portfolio: Portfolio;
+  editToken: string;
 }
 
-export default function EditClient({ portfolio }: Props) {
+export default function EditClient({ portfolio, editToken }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [localData, setLocalData] = useState<PortfolioData>(portfolio.portfolio_data);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,10 +30,17 @@ export default function EditClient({ portfolio }: Props) {
       const res = await fetch('/api/update-portfolio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ portfolioId: portfolio.id, portfolioData: data }),
+        body: JSON.stringify({
+          portfolioId: portfolio.id,
+          editToken,
+          portfolioData: data,
+        }),
       });
 
-      if (!res.ok) throw new Error('Failed to save');
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error || 'Failed to save');
+      }
 
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);

@@ -66,8 +66,8 @@ export default function Home() {
         throw new Error(data.error || 'Failed to parse CV');
       }
 
-      // Redirect to preview page
-      router.push(`/preview/${data.portfolioId}`);
+      // Redirect to preview page with signed edit token
+      router.push(`/preview/${data.portfolioId}?token=${encodeURIComponent(data.editToken)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
