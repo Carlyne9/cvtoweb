@@ -1,26 +1,379 @@
 @import "tailwindcss";
 
+/* ============================================================
+   CVTOWEB DESIGN SYSTEM — Color Tokens
+   Primary hue: violet-purple (oklch 278.887°)
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+  /* ----------------------------------------------------------
+     BRAND — Violet primary palette (user-defined)
+  ---------------------------------------------------------- */
+  --brand-50:  oklch(0.592 0.134 278.887);
+  --brand-100: oklch(0.532 0.157 278.887);
+  --brand-200: oklch(0.471 0.170 278.887);
+  --brand-300: oklch(0.411 0.148 278.887);
+  --brand-400: oklch(0.351 0.127 278.887);
+  --brand-600: oklch(0.291 0.105 278.887);
+  --brand-700: oklch(0.231 0.083 278.887);
+  --brand-800: oklch(0.170 0.061 278.887);
+  --brand-900: oklch(0.110 0.040 278.887);
+  --brand-950: oklch(0.050 0.018 278.887);
+
+  /* ----------------------------------------------------------
+     NEUTRAL — Violet-tinted grays (same hue, near-zero chroma)
+     Gives the UI a cohesive purple undertone rather than
+     flat gray.
+  ---------------------------------------------------------- */
+  --neutral-0:    oklch(1.000 0.000 278.887);
+  --neutral-50:   oklch(0.970 0.004 278.887);
+  --neutral-100:  oklch(0.930 0.007 278.887);
+  --neutral-200:  oklch(0.870 0.010 278.887);
+  --neutral-300:  oklch(0.750 0.013 278.887);
+  --neutral-400:  oklch(0.610 0.015 278.887);
+  --neutral-500:  oklch(0.490 0.015 278.887);
+  --neutral-600:  oklch(0.370 0.013 278.887);
+  --neutral-700:  oklch(0.270 0.011 278.887);
+  --neutral-800:  oklch(0.195 0.009 278.887);
+  --neutral-900:  oklch(0.140 0.007 278.887);
+  --neutral-950:  oklch(0.095 0.005 278.887);
+  --neutral-1000: oklch(0.050 0.003 278.887);
+
+  /* ----------------------------------------------------------
+     SEMANTIC — Status colors
+  ---------------------------------------------------------- */
+
+  /* Success — green */
+  --success-100: oklch(0.88 0.12 145);
+  --success-400: oklch(0.72 0.19 145);
+  --success-500: oklch(0.62 0.20 145);
+  --success-600: oklch(0.52 0.17 145);
+  --success-900: oklch(0.22 0.07 145);
+
+  /* Error — red */
+  --error-100:  oklch(0.90 0.10 25);
+  --error-400:  oklch(0.70 0.21 25);
+  --error-500:  oklch(0.59 0.22 25);
+  --error-600:  oklch(0.49 0.19 25);
+  --error-900:  oklch(0.22 0.08 25);
+
+  /* Warning — amber */
+  --warning-100: oklch(0.93 0.10 75);
+  --warning-400: oklch(0.80 0.18 75);
+  --warning-500: oklch(0.72 0.19 75);
+  --warning-600: oklch(0.60 0.17 75);
+  --warning-900: oklch(0.26 0.07 75);
+
+  /* Info — sky blue */
+  --info-100: oklch(0.90 0.08 220);
+  --info-400: oklch(0.68 0.18 220);
+  --info-500: oklch(0.58 0.20 220);
+  --info-600: oklch(0.48 0.18 220);
+  --info-900: oklch(0.22 0.07 220);
+
+  /* ----------------------------------------------------------
+     ROLE TOKENS — Semantic usage aliases
+     Components reference these, not raw palette values.
+     Change a role token here to retheme the entire UI.
+  ---------------------------------------------------------- */
+
+  /* Backgrounds */
+  --bg-base:     var(--neutral-1000);   /* page background */
+  --bg-subtle:   var(--neutral-950);    /* slight elevation (sidebar, panels) */
+  --bg-surface:  var(--neutral-900);    /* cards, modals */
+  --bg-elevated: var(--neutral-800);    /* dropdowns, tooltips */
+  --bg-overlay:  var(--neutral-700);    /* hover states */
+
+  /* Brand backgrounds */
+  --bg-brand:        var(--brand-200);  /* solid brand button fill */
+  --bg-brand-subtle: var(--brand-900);  /* tinted brand area */
+  --bg-brand-muted:  var(--brand-950);  /* very subtle brand wash */
+
+  /* Borders */
+  --border-subtle:  var(--neutral-900);
+  --border-default: var(--neutral-800);
+  --border-strong:  var(--neutral-700);
+  --border-brand:   var(--brand-300);
+
+  /* Text */
+  --text-primary:       var(--neutral-50);
+  --text-secondary:     var(--neutral-300);
+  --text-muted:         var(--neutral-500);
+  --text-disabled:      var(--neutral-700);
+  --text-brand:         var(--brand-50);
+  --text-brand-subtle:  var(--brand-100);
+  --text-inverse:       var(--neutral-1000);
+
+  /* Status text */
+  --text-success: var(--success-400);
+  --text-error:   var(--error-400);
+  --text-warning: var(--warning-400);
+  --text-info:    var(--info-400);
+
+  /* Interactive */
+  --interactive-primary:        var(--brand-200);
+  --interactive-primary-hover:  var(--brand-100);
+  --interactive-primary-active: var(--brand-300);
+  --interactive-secondary:        var(--neutral-800);
+  --interactive-secondary-hover:  var(--neutral-700);
+  --interactive-secondary-active: var(--neutral-600);
+  --interactive-ghost-hover:      oklch(0.195 0.009 278.887 / 0.5);
+
+  /* Focus ring */
+  --ring-brand:   oklch(0.532 0.157 278.887 / 0.5);
+  --ring-error:   oklch(0.59 0.22 25 / 0.5);
+  --ring-success: oklch(0.62 0.20 145 / 0.5);
+  --ring-info:    oklch(0.58 0.20 220 / 0.5);
+
 }
+
+/* ============================================================
+   TYPOGRAPHY SYSTEM — Source Sans 3
+   Scale based on a 1.25 Major Third modular ratio
+   Base: 16px
+   ============================================================ */
+
+:root {
+
+  /* ----------------------------------------------------------
+     FONT FAMILIES
+  ---------------------------------------------------------- */
+  --font-primary: var(--font-source-sans), system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ----------------------------------------------------------
+     DISPLAY — Hero / marketing headlines
+     Use: landing page hero, splash screens
+  ---------------------------------------------------------- */
+  --type-display-size:    4.5rem;     /* 72px */
+  --type-display-weight:  300;        /* Light — elegant at large sizes */
+  --type-display-lh:      1.05;
+  --type-display-ls:      -0.03em;
+
+  /* ----------------------------------------------------------
+     HEADINGS — H1 through H6
+  ---------------------------------------------------------- */
+  --type-h1-size:    3.5rem;          /* 56px */
+  --type-h1-weight:  600;
+  --type-h1-lh:      1.1;
+  --type-h1-ls:      -0.02em;
+
+  --type-h2-size:    2.5rem;          /* 40px */
+  --type-h2-weight:  700;
+  --type-h2-lh:      1.15;
+  --type-h2-ls:      -0.02em;
+
+  --type-h3-size:    2rem;            /* 32px */
+  --type-h3-weight:  600;
+  --type-h3-lh:      1.2;
+  --type-h3-ls:      -0.01em;
+
+  --type-h4-size:    1.5rem;          /* 24px */
+  --type-h4-weight:  600;
+  --type-h4-lh:      1.3;
+  --type-h4-ls:      -0.01em;
+
+  --type-h5-size:    1.25rem;         /* 20px */
+  --type-h5-weight:  600;
+  --type-h5-lh:      1.35;
+  --type-h5-ls:      0em;
+
+  --type-h6-size:    1.125rem;        /* 18px */
+  --type-h6-weight:  600;
+  --type-h6-lh:      1.4;
+  --type-h6-ls:      0em;
+
+  /* ----------------------------------------------------------
+     SUBHEADINGS — Section labels, card titles
+     Use: above content blocks, sidebar titles
+  ---------------------------------------------------------- */
+  --type-subheading-lg-size:    1rem;      /* 16px */
+  --type-subheading-lg-weight:  600;
+  --type-subheading-lg-lh:      1.4;
+  --type-subheading-lg-ls:      0.01em;
+
+  --type-subheading-sm-size:    0.75rem;   /* 12px */
+  --type-subheading-sm-weight:  700;
+  --type-subheading-sm-lh:      1.4;
+  --type-subheading-sm-ls:      0.08em;   /* Wider tracking — used for ALL CAPS labels */
+
+  /* ----------------------------------------------------------
+     BODY — Prose and UI text
+  ---------------------------------------------------------- */
+  --type-body-lg-size:    1.125rem;    /* 18px — comfortable reading size */
+  --type-body-lg-weight:  400;
+  --type-body-lg-lh:      1.7;
+  --type-body-lg-ls:      0em;
+
+  --type-body-md-size:    1rem;        /* 16px — primary UI text */
+  --type-body-md-weight:  400;
+  --type-body-md-lh:      1.6;
+  --type-body-md-ls:      0em;
+
+  --type-body-sm-size:    0.875rem;    /* 14px — secondary / supporting text */
+  --type-body-sm-weight:  400;
+  --type-body-sm-lh:      1.6;
+  --type-body-sm-ls:      0em;
+
+  /* ----------------------------------------------------------
+     CAPTION / METADATA — Timestamps, tags, fine print
+  ---------------------------------------------------------- */
+  --type-caption-size:    0.75rem;     /* 12px */
+  --type-caption-weight:  400;
+  --type-caption-lh:      1.5;
+  --type-caption-ls:      0.01em;
+
+  --type-overline-size:   0.6875rem;   /* 11px — ALL CAPS eyebrow labels */
+  --type-overline-weight: 700;
+  --type-overline-lh:     1.4;
+  --type-overline-ls:     0.1em;
+
+  /* ----------------------------------------------------------
+     BUTTON / LABEL — Interactive element text
+  ---------------------------------------------------------- */
+  --type-btn-lg-size:    1rem;         /* 16px */
+  --type-btn-lg-weight:  600;
+  --type-btn-lg-lh:      1;
+  --type-btn-lg-ls:      0.01em;
+
+  --type-btn-md-size:    0.875rem;     /* 14px — default button */
+  --type-btn-md-weight:  600;
+  --type-btn-md-lh:      1;
+  --type-btn-md-ls:      0.01em;
+
+  --type-btn-sm-size:    0.75rem;      /* 12px — compact / icon buttons */
+  --type-btn-sm-weight:  600;
+  --type-btn-sm-lh:      1;
+  --type-btn-sm-ls:      0.02em;
+
+  --type-label-size:     0.75rem;      /* 12px — form labels, input hints */
+  --type-label-weight:   600;
+  --type-label-lh:       1.4;
+  --type-label-ls:       0.02em;
+
+  /* ----------------------------------------------------------
+     CODE / MONO
+  ---------------------------------------------------------- */
+  --type-code-size:    0.875rem;       /* 14px */
+  --type-code-weight:  400;
+  --type-code-lh:      1.6;
+  --type-code-ls:      0em;
+
+}
+
+/* ============================================================
+   TAILWIND v4 THEME — registers tokens as Tailwind utilities
+   bg-brand-50, text-neutral-800, border-brand, etc.
+   ============================================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Brand scale */
+  --color-brand-50:  var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  /* Neutral scale */
+  --color-neutral-0:    var(--neutral-0);
+  --color-neutral-50:   var(--neutral-50);
+  --color-neutral-100:  var(--neutral-100);
+  --color-neutral-200:  var(--neutral-200);
+  --color-neutral-300:  var(--neutral-300);
+  --color-neutral-400:  var(--neutral-400);
+  --color-neutral-500:  var(--neutral-500);
+  --color-neutral-600:  var(--neutral-600);
+  --color-neutral-700:  var(--neutral-700);
+  --color-neutral-800:  var(--neutral-800);
+  --color-neutral-900:  var(--neutral-900);
+  --color-neutral-950:  var(--neutral-950);
+  --color-neutral-1000: var(--neutral-1000);
+
+  /* Semantic — status */
+  --color-success-100: var(--success-100);
+  --color-success-400: var(--success-400);
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+  --color-success-900: var(--success-900);
+
+  --color-error-100: var(--error-100);
+  --color-error-400: var(--error-400);
+  --color-error-500: var(--error-500);
+  --color-error-600: var(--error-600);
+  --color-error-900: var(--error-900);
+
+  --color-warning-100: var(--warning-100);
+  --color-warning-400: var(--warning-400);
+  --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
+  --color-warning-900: var(--warning-900);
+
+  --color-info-100: var(--info-100);
+  --color-info-400: var(--info-400);
+  --color-info-500: var(--info-500);
+  --color-info-600: var(--info-600);
+  --color-info-900: var(--info-900);
+
+  /* Role token utilities */
+  --color-bg-base:          var(--bg-base);
+  --color-bg-subtle:        var(--bg-subtle);
+  --color-bg-surface:       var(--bg-surface);
+  --color-bg-elevated:      var(--bg-elevated);
+  --color-bg-overlay:       var(--bg-overlay);
+  --color-bg-brand:         var(--bg-brand);
+  --color-bg-brand-subtle:  var(--bg-brand-subtle);
+  --color-bg-brand-muted:   var(--bg-brand-muted);
+
+  --color-border-subtle:  var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong:  var(--border-strong);
+  --color-border-brand:   var(--border-brand);
+
+  --color-text-primary:      var(--text-primary);
+  --color-text-secondary:    var(--text-secondary);
+  --color-text-muted:        var(--text-muted);
+  --color-text-disabled:     var(--text-disabled);
+  --color-text-brand:        var(--text-brand);
+  --color-text-brand-subtle: var(--text-brand-subtle);
+  --color-text-inverse:      var(--text-inverse);
+  --color-text-success:      var(--text-success);
+  --color-text-error:        var(--text-error);
+  --color-text-warning:      var(--text-warning);
+  --color-text-info:         var(--text-info);
+
+  /* Fonts */
+  --font-sans: var(--font-source-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-lh);
+  font-weight: var(--type-body-md-weight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Native element defaults — apply type roles to semantic HTML */
+h1 { font-size: var(--type-h1-size); font-weight: var(--type-h1-weight); line-height: var(--type-h1-lh); letter-spacing: var(--type-h1-ls); }
+h2 { font-size: var(--type-h2-size); font-weight: var(--type-h2-weight); line-height: var(--type-h2-lh); letter-spacing: var(--type-h2-ls); }
+h3 { font-size: var(--type-h3-size); font-weight: var(--type-h3-weight); line-height: var(--type-h3-lh); letter-spacing: var(--type-h3-ls); }
+h4 { font-size: var(--type-h4-size); font-weight: var(--type-h4-weight); line-height: var(--type-h4-lh); letter-spacing: var(--type-h4-ls); }
+h5 { font-size: var(--type-h5-size); font-weight: var(--type-h5-weight); line-height: var(--type-h5-lh); letter-spacing: var(--type-h5-ls); }
+h6 { font-size: var(--type-h6-size); font-weight: var(--type-h6-weight); line-height: var(--type-h6-lh); letter-spacing: var(--type-h6-ls); }
+
+code, pre, kbd { font-family: var(--font-mono); font-size: var(--type-code-size); line-height: var(--type-code-lh); }

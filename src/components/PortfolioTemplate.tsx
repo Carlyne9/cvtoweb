@@ -137,6 +137,116 @@ function SortableItem({ id, children, className = "", isEditing }: SortableItemP
   );
 }
 
+interface ThemeStyles {
+  bg: string; text: string; muted: string; border: string;
+  accent: string; accentBg: string; card: string; label: string;
+}
+
+interface SortableBulletProps {
+  id: string;
+  bullet: string;
+  idx: number;
+  bulletIdx: number;
+  isEditing: boolean;
+  themeStyles: ThemeStyles;
+  onSave: (v: string) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  onAdd: () => void;
+  onDelete: () => void;
+  setFocusTicket: (ticket: { id: string } | null) => void;
+}
+
+function SortableBullet({
+  id, bullet, idx, bulletIdx, isEditing, themeStyles,
+  onSave, onKeyDown, onAdd, onDelete, setFocusTicket,
+}: SortableBulletProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  return (
+    <li ref={setNodeRef} style={style} className={`${themeStyles.muted} text-sm flex items-start group/bullet`}>
+      {isEditing && (
+        <div className="flex items-center gap-0.5 flex-shrink-0 mr-2 mt-0.5 opacity-0 group-hover/bullet:opacity-100 transition-opacity relative" ref={menuRef}>
+          {/* + add button */}
+          <button
+            onClick={onAdd}
+            className="p-1 hover:bg-blue-500/20 rounded text-blue-500 transition-colors"
+            title="Add bullet below"
+          >
+            <Plus size={13} />
+          </button>
+
+          {/* Grip — drag to reorder, click to open menu */}
+          <button
+            {...attributes}
+            {...listeners}
+            onClick={(e) => {
+              // Only open menu on click (not after a drag)
+              if (!isDragging) {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
+              }
+            }}
+            className="p-1 hover:bg-white/10 rounded text-slate-500 hover:text-slate-300 transition-colors cursor-grab active:cursor-grabbing"
+            title="Drag to reorder · Click for options"
+          >
+            <GripVertical size={13} />
+          </button>
+
+          {/* Submenu */}
+          {menuOpen && (
+            <div
+              className="absolute left-0 top-full mt-1 z-50 min-w-[130px] rounded-lg border border-white/10 bg-slate-900 shadow-xl py-1 text-xs"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => { setMenuOpen(false); onDelete(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-red-500/10 transition-colors text-left"
+              >
+                <Trash2 size={12} />
+                Delete bullet
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <span className={`${themeStyles.label} mt-1 mr-2 flex-shrink-0`}>•</span>
+      <EditableText
+        id={`bullet-${idx}-${bulletIdx}`}
+        value={bullet}
+        onSave={onSave}
+        onKeyDown={onKeyDown}
+        linkify
+        linkClassName={`${themeStyles.accent} underline underline-offset-2`}
+        className="flex-1"
+        isEditing={isEditing}
+        setFocusTicket={setFocusTicket}
+      />
+    </li>
+  );
+}
+
 interface Props {
   data: PortfolioData;
   isEditing?: boolean;
@@ -305,6 +415,19 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
     }
   };
 
+  const handleBulletDragEnd = (event: any, expIdx: number) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = parseInt(String(active.id).split('-')[2]);
+    const newIndex = parseInt(String(over.id).split('-')[2]);
+    const newExp = [...data.experience];
+    newExp[expIdx] = {
+      ...newExp[expIdx],
+      bullets: arrayMove(newExp[expIdx].bullets, oldIndex, newIndex),
+    };
+    handleUpdate({ ...data, experience: newExp });
+  };
+
   const handleKeyDown = (
     e: React.KeyboardEvent,
     type: 'bullet' | 'education' | 'skill',
@@ -446,59 +569,45 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                         )}
                       </div>
                       {exp.bullets.length > 0 && (
-                        <ul className="space-y-3">
-                          {exp.bullets.map((bullet, bulletIdx) => (
-                            <li key={bulletIdx} className={`${themeStyles.muted} text-sm flex gap-3 group/bullet relative`}>
-                              <span className={`${themeStyles.label} mt-1`}>•</span>
-                              <EditableText
-                                id={`bullet-${idx}-${bulletIdx}`}
-                                value={bullet}
-                                onSave={(v) => {
-                                  const newExp = [...data.experience];
-                                  newExp[idx].bullets[bulletIdx] = v;
-                                  handleUpdate({ ...data, experience: newExp });
-                                }}
-                                onKeyDown={(e) =>
-                                  handleKeyDown(
-                                    e,
-                                    'bullet',
-                                    idx,
-                                    bulletIdx,
-                                    bullet,
-                                    (v) => {
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(e) => handleBulletDragEnd(e, idx)}
+                        >
+                          <SortableContext
+                            items={exp.bullets.map((_, bIdx) => `bullet-${idx}-${bIdx}`)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <ul className="space-y-3">
+                              {exp.bullets.map((bullet, bulletIdx) => (
+                                <SortableBullet
+                                  key={`bullet-${idx}-${bulletIdx}`}
+                                  id={`bullet-${idx}-${bulletIdx}`}
+                                  bullet={bullet}
+                                  idx={idx}
+                                  bulletIdx={bulletIdx}
+                                  isEditing={!!isEditing}
+                                  themeStyles={themeStyles}
+                                  onSave={(v) => {
+                                    const newExp = [...data.experience];
+                                    newExp[idx].bullets[bulletIdx] = v;
+                                    handleUpdate({ ...data, experience: newExp });
+                                  }}
+                                  onKeyDown={(e) =>
+                                    handleKeyDown(e, 'bullet', idx, bulletIdx, bullet, (v) => {
                                       const newExp = [...data.experience];
                                       newExp[idx].bullets[bulletIdx] = v;
                                       handleUpdate({ ...data, experience: newExp });
-                                    }
-                                  )
-                                }
-                                linkify
-                                linkClassName={`${themeStyles.accent} underline underline-offset-2`}
-                                className="flex-1"
-                                isEditing={!!isEditing}
-                                setFocusTicket={setFocusTicket}
-                              />
-                              {isEditing && (
-                                <div className="absolute -left-10 top-0 flex gap-1 opacity-0 group-hover/bullet:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => addListItem('experience', idx, bulletIdx)}
-                                    className="p-1 hover:bg-blue-500/20 rounded text-blue-500 transition-colors"
-                                    title="Add bullet below"
-                                  >
-                                    <Plus size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => removeListItem('experience', idx, bulletIdx)}
-                                    className="p-1 hover:bg-red-500/20 rounded text-red-500 transition-colors"
-                                    title="Remove bullet"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
+                                    })
+                                  }
+                                  onAdd={() => addListItem('experience', idx, bulletIdx)}
+                                  onDelete={() => removeListItem('experience', idx, bulletIdx)}
+                                  setFocusTicket={setFocusTicket}
+                                />
+                              ))}
+                            </ul>
+                          </SortableContext>
+                        </DndContext>
                       )}
                     </SortableItem>
                   ))}
