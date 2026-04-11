@@ -24,13 +24,13 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const variantStyles: Record<Variant, React.CSSProperties> = {
   primary: {
     backgroundColor: 'var(--interactive-primary)',
-    color:           'var(--text-inverse)',
-    border:          '1px solid transparent',
+    color:           'var(--neutral-50)',
+    border:          'none',
   },
   secondary: {
     backgroundColor: 'var(--interactive-secondary)',
     color:           'var(--text-primary)',
-    border:          '1px solid var(--border-default)',
+    border:          '1px solid var(--border-strong)',
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -46,7 +46,7 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
 
 const variantHover: Record<Variant, React.CSSProperties> = {
   primary:   { backgroundColor: 'var(--interactive-primary-hover)' },
-  secondary: { backgroundColor: 'var(--interactive-secondary-hover)', borderColor: 'var(--border-strong)' },
+  secondary: { backgroundColor: 'var(--interactive-secondary-hover)', borderColor: 'var(--neutral-600)' },
   ghost:     { backgroundColor: 'var(--interactive-ghost-hover)', color: 'var(--text-primary)' },
   danger:    { backgroundColor: 'var(--error-600)', color: 'var(--neutral-0)' },
 };

@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { getAppDomain, isSubdomainEnabled } from '@/lib/urls';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 interface Props {
-  portfolioId: string;
-  editToken: string;
+  portfolioId:       string;
+  editToken:         string;
   suggestedUsername: string;
-  onClose: () => void;
-  onSuccess: (username: string) => void;
+  onClose:           () => void;
+  onSuccess:         (username: string) => void;
 }
 
 export default function PublishModal({
@@ -18,22 +21,28 @@ export default function PublishModal({
   onClose,
   onSuccess,
 }: Props) {
-  const [username, setUsername] = useState(suggestedUsername);
-  const [email, setEmail] = useState('');
+  const [username,  setUsername]  = useState(suggestedUsername);
+  const [email,     setEmail]     = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
 
-  const appDomain = getAppDomain();
-  const showSubdomain = isSubdomainEnabled();
+  const appDomain      = getAppDomain();
+  const showSubdomain  = isSubdomainEnabled();
+
+  const isValidUsername = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(username.toLowerCase());
+  const isValidEmail    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const canSubmit       = !isLoading && isValidUsername && isValidEmail;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
+
     setError(null);
     setIsLoading(true);
 
     try {
       const response = await fetch('/api/publish', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           portfolioId,
@@ -44,10 +53,7 @@ export default function PublishModal({
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to publish');
-      }
+      if (!response.ok) throw new Error(data.error || 'Failed to publish');
 
       onSuccess(data.username);
     } catch (err) {
@@ -57,102 +63,92 @@ export default function PublishModal({
     }
   };
 
-  const isValidUsername = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/.test(username.toLowerCase());
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Publish Your Portfolio</h2>
-        <p className="text-slate-500 mb-6">Choose your unique URL and we&apos;ll make it live.</p>
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Publish Your Portfolio"
+      description="Choose your unique URL and we'll make it live."
+      size="md"
+      footer={
+        <>
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            loading={isLoading}
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+          >
+            Publish
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-        <form onSubmit={handleSubmit}>
-          {/* Username Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Your URL
-            </label>
-            <div className="flex items-center">
-              {!showSubdomain ? (
-                <>
-                  <span className="px-4 py-3 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-slate-500 text-sm">
-                    /portfolio/
-                  </span>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    className="flex-1 px-4 py-3 border border-l-0 border-slate-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-                    placeholder="yourname"
-                    maxLength={32}
-                  />
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    className="flex-1 px-4 py-3 border border-r-0 border-slate-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-                    placeholder="yourname"
-                    maxLength={32}
-                  />
-                  <span className="px-4 py-3 bg-slate-100 border border-l-0 border-slate-300 rounded-r-lg text-slate-500 text-sm">
-                    .{appDomain}
-                  </span>
-                </>
-              )}
-            </div>
-            {username && !isValidUsername && (
-              <p className="text-red-500 text-sm mt-1">
-                Must be 3-32 characters, letters, numbers, and hyphens only
-              </p>
-            )}
+        {/* URL input */}
+        <Input
+          label="Your URL"
+          size="md"
+          value={username}
+          onChange={(e) =>
+            setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+          }
+          placeholder="yourname"
+          maxLength={32}
+          prefix={!showSubdomain
+            ? <span style={{ fontSize: 'var(--type-body-sm-size)', whiteSpace: 'nowrap' }}>/portfolio/</span>
+            : undefined
+          }
+          suffix={showSubdomain
+            ? <span style={{ fontSize: 'var(--type-body-sm-size)', whiteSpace: 'nowrap' }}>.{appDomain}</span>
+            : undefined
+          }
+          variant={username && !isValidUsername ? 'error' : 'default'}
+          helperText={username && !isValidUsername
+            ? 'Must be 3–32 characters: letters, numbers and hyphens only'
+            : undefined
+          }
+        />
+
+        {/* Email input */}
+        <Input
+          label="Email Address"
+          size="md"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          helperText="We'll send you a link to edit your portfolio later"
+        />
+
+        {/* Error banner */}
+        {error && (
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: '0.625rem',
+              backgroundColor: 'var(--error-900)',
+              border: '1px solid var(--error-600)',
+              fontSize: 'var(--type-body-sm-size)',
+              color: 'var(--text-error)',
+            }}
+          >
+            {error}
           </div>
+        )}
 
-          {/* Email Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-900"
-              placeholder="you@example.com"
-            />
-            <p className="text-slate-400 text-sm mt-1">
-              We&apos;ll send you a link to edit your portfolio later
-            </p>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !isValidUsername || !isValidEmail}
-              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Publishing...' : 'Publish'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Hidden submit so Enter key works */}
+        <button type="submit" style={{ display: 'none' }} aria-hidden />
+      </form>
+    </Modal>
   );
 }

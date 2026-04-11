@@ -6,10 +6,60 @@ import { Portfolio, PortfolioData } from '@/types/portfolio';
 import PortfolioTemplate from '@/components/PortfolioTemplate';
 import PublishModal from '@/components/PublishModal';
 import { getPortfolioUrl } from '@/lib/urls';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   portfolio: Portfolio;
   editToken: string;
+}
+
+/* ── Icons ───────────────────────────────────────────────── */
+function ChevronLeft() {
+  return (
+    <svg width={16} height={16} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width={15} height={15} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  );
+}
+
+function PublishIcon() {
+  return (
+    <svg width={15} height={15} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg width={14} height={14} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width={12} height={12} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function AlertIcon() {
+  return (
+    <svg width={12} height={12} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
 }
 
 export default function PreviewClient({ portfolio, editToken }: Props) {
@@ -19,8 +69,7 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
   const [localData, setLocalData] = useState<PortfolioData>(portfolio.portfolio_data);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  
-  // Ref to track if we should skip the first render of the auto-save effect
+
   const isFirstRender = useRef(true);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -30,13 +79,12 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
     );
   };
 
-  // The core save function used by both auto-save and manual save
   const performSave = async (data: PortfolioData, silent = false) => {
     if (!silent) {
-       setIsSaving(true);
-       setSaveStatus('saving');
+      setIsSaving(true);
+      setSaveStatus('saving');
     } else {
-       setSaveStatus('saving');
+      setSaveStatus('saving');
     }
 
     try {
@@ -54,14 +102,11 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
         const payload = await response.json().catch(() => null);
         throw new Error(payload?.error || 'Failed to save');
       }
-      
+
       setSaveStatus('success');
-      
-      // If it wasn't a silent auto-save, we might want to refresh
-      if (!silent) {
-        router.refresh();
-      }
-      
+
+      if (!silent) router.refresh();
+
       setTimeout(() => setSaveStatus('idle'), 3000);
       return true;
     } catch (err) {
@@ -73,42 +118,32 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
     }
   };
 
-  // Manual save handler - now also exits edit mode and opens live site if published
   const handleManualSave = async () => {
     const success = await performSave(localData);
     if (success) {
       setIsEditing(false);
-      // If the portfolio is already published, open the live site in a new tab
       if (isPublished && publicUrl) {
         window.open(publicUrl, '_blank');
       }
     }
   };
 
-  // Auto-save effect
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
 
-    // Only auto-save if we are in editing mode
     if (!isEditing) return;
 
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
 
-    // Set new timeout for debounced save
     autoSaveTimeoutRef.current = setTimeout(() => {
       performSave(localData, true);
-    }, 1500); // 1.5s debounce
+    }, 1500);
 
     return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localData, isEditing]);
@@ -117,177 +152,228 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
   const isPublished = !!portfolio.is_published || !!portfolio.username;
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Preview Banner */}
-      <div className="bg-slate-900 text-white py-3 px-4 flex items-center justify-between sticky top-0 z-50 shadow-lg">
-        <div className="flex items-center gap-4">
-          <button
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: 'var(--neutral-950, #0a0a0f)' }}
+    >
+      {/* ── Top Bar ─────────────────────────────────────────── */}
+      <div
+        className="sticky top-0 z-50 flex items-center justify-between px-4 py-2.5"
+        style={{
+          backgroundColor: 'var(--brand-800)',
+          borderBottom: '1px solid var(--border-subtle)',
+          minHeight: '52px',
+        }}
+      >
+        {/* Left: logo + status */}
+        <div className="flex items-center gap-3">
+          {/* Back home */}
+          <Button
+            variant="ghost"
+            size="sm"
+            iconLeft={<ChevronLeft />}
             onClick={() => router.push('/')}
-            className="text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-sm font-medium"
+            style={{ color: 'var(--text-muted)' }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
             Home
-          </button>
-          <span className="text-slate-700">|</span>
+          </Button>
+
+          {/* Divider */}
+          <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-subtle)' }} />
+
+          {/* Status pill */}
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isEditing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
-            <span className="text-sm font-medium">
-              {isPublished 
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: isEditing
+                  ? 'var(--warning-400, oklch(0.78 0.17 75))'
+                  : 'var(--success-400)',
+                animation: isEditing ? 'pulse 1.5s ease-in-out infinite' : undefined,
+              }}
+            />
+            <span
+              style={{
+                fontSize: 'var(--type-body-sm-size)',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {isPublished
                 ? (isEditing ? 'Editing Live Site' : 'Live Preview')
                 : (isEditing ? 'Editing Draft' : 'Draft Preview')}
             </span>
           </div>
 
-          
-          {/* Status Indicators */}
-          <div className="hidden md:flex items-center gap-2 ml-4">
+          {/* Auto-save status */}
+          <div className="hidden md:flex items-center gap-1.5 ml-2">
             {saveStatus === 'saving' && (
-              <div className="flex items-center gap-2 text-slate-400 text-xs">
-                <div className="w-3 h-3 border border-slate-600 border-t-slate-300 rounded-full animate-spin" />
-                Saving changes...
-              </div>
+              <span
+                style={{
+                  fontSize: 'var(--type-caption-size)',
+                  color: 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}
+              >
+                <svg width={12} height={12} viewBox="0 0 16 16" fill="none"
+                  style={{ animation: 'btn-spin 0.7s linear infinite' }}>
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
+                  <path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                Saving…
+              </span>
             )}
             {saveStatus === 'success' && (
-              <div className="flex items-center gap-1 text-green-400 text-xs">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Saved
-              </div>
+              <span
+                style={{
+                  fontSize: 'var(--type-caption-size)',
+                  color: 'var(--success-400)',
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                }}
+              >
+                <CheckIcon /> Saved
+              </span>
             )}
             {saveStatus === 'error' && (
-              <div className="flex items-center gap-1 text-red-400 text-xs">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Save error
-              </div>
+              <span
+                style={{
+                  fontSize: 'var(--type-caption-size)',
+                  color: 'var(--text-error)',
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                }}
+              >
+                <AlertIcon /> Save failed
+              </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Right: action buttons */}
+        <div className="flex items-center gap-2">
           {isEditing ? (
             <>
-              {/* Theme Selector */}
-              <div className="flex items-center gap-2 bg-slate-800 rounded-lg px-2 mr-2">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold ml-1">Theme</span>
+              {/* Theme selector */}
+              <div
+                className="flex items-center gap-1.5 mr-1"
+                style={{
+                  backgroundColor: 'oklch(1 0 0 / 0.05)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '0.625rem',
+                  padding: '0 0.625rem',
+                  height: '2.5rem',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.6rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  Theme
+                </span>
                 <select
                   value={localData.theme || 'midnight'}
-                  onChange={(e) => setLocalData({ ...localData, theme: e.target.value as 'midnight' | 'snow' | 'cobalt' })}
-                  className="bg-transparent text-sm font-medium py-1.5 focus:outline-none cursor-pointer pr-2"
+                  onChange={(e) =>
+                    setLocalData({ ...localData, theme: e.target.value as 'midnight' | 'snow' | 'cobalt' })
+                  }
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 'var(--type-body-sm-size)',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    paddingRight: '0.25rem',
+                  }}
                 >
-                  <option value="midnight" className="bg-slate-900">Midnight</option>
-                  <option value="snow" className="bg-slate-900">Snow</option>
-                  <option value="cobalt" className="bg-slate-900">Cobalt</option>
+                  <option value="midnight" style={{ backgroundColor: 'var(--brand-900)' }}>Midnight</option>
+                  <option value="snow"     style={{ backgroundColor: 'var(--brand-900)' }}>Snow</option>
+                  <option value="cobalt"   style={{ backgroundColor: 'var(--brand-900)' }}>Cobalt</option>
                 </select>
               </div>
 
-              <button
+              <Button
+                variant="ghost"
+                size="md"
+                disabled={isSaving}
                 onClick={() => {
                   setLocalData(portfolio.portfolio_data);
                   setIsEditing(false);
                 }}
-                className="text-slate-400 hover:text-white px-4 py-2 text-sm font-medium transition-colors"
-                disabled={isSaving}
               >
                 Cancel
-              </button>
-              <button
-                onClick={handleManualSave}
-                disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md flex items-center gap-2"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  isPublished ? 'Save Updates' : 'Save Changes'
-                )}
-              </button>
+              </Button>
 
-              {!isPublished && (
-                <button
-                  onClick={() => setShowPublishModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Publish Site
-                </button>
-              )}
+              <Button
+                variant="primary"
+                size="md"
+                loading={isSaving}
+                onClick={handleManualSave}
+              >
+                {isPublished ? 'Save Updates' : 'Save Changes'}
+              </Button>
 
               {isPublished && (
-                <a
-                  href={publicUrl || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconRight={<ExternalLinkIcon />}
+                  onClick={() => window.open(publicUrl || '#', '_blank')}
                 >
                   Visit Live Site
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
+                </Button>
               )}
             </>
           ) : (
             <>
-              {/* Preview Mode Buttons */}
-              <button
+              <Button
+                variant="secondary"
+                size="md"
+                iconLeft={<EditIcon />}
                 onClick={() => setIsEditing(true)}
-                className="text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
                 Edit Content
-              </button>
-              
+              </Button>
 
-               {!isPublished && (
-                <button
+              {!isPublished && (
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={() => setShowPublishModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-all shadow-md flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
                   Publish Site
-                </button>
+                </Button>
               )}
 
               {isPublished && (
-                <a
-                  href={publicUrl || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                <Button
+                  variant="secondary"
+                  size="md"
+                  iconRight={<ExternalLinkIcon />}
+                  onClick={() => window.open(publicUrl || '#', '_blank')}
                 >
-                  Visit Live Production
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
+                  Visit Live Site
+                </Button>
               )}
             </>
           )}
         </div>
       </div>
 
-      {/* Portfolio Preview */}
-      <PortfolioTemplate 
-        data={localData} 
-        isEditing={isEditing}
-        onUpdate={setLocalData}
-      />
+      {/* ── Working Area ────────────────────────────────────── */}
+      <div className="flex-1 overflow-auto">
+        <PortfolioTemplate
+          data={localData}
+          isEditing={isEditing}
+          onUpdate={setLocalData}
+        />
+      </div>
 
-      {/* Publish Modal */}
+      {/* ── Publish Modal ────────────────────────────────────── */}
       {showPublishModal && (
         <PublishModal
           portfolioId={portfolio.id}
@@ -304,4 +390,3 @@ export default function PreviewClient({ portfolio, editToken }: Props) {
     </div>
   );
 }
-

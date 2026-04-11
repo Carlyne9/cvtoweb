@@ -13,34 +13,36 @@ import React, { useRef, useState, useCallback, useId } from 'react';
 
 type UploadVariant = 'default' | 'error' | 'success';
 type UploadSize    = 'sm' | 'md' | 'lg';
-type UploadState   = 'idle' | 'dragging' | 'uploading' | 'complete' | 'error';
 
 export interface FileUploadProps {
-  /** Label shown above the zone */
   label?:          string;
-  /** Helper text below the zone */
   helperText?:     string;
-  /** Controlled validation variant */
   variant?:        UploadVariant;
-  /** Zone size */
   size?:           UploadSize;
-  /** native <input accept> string e.g. "application/pdf,.docx" */
   accept?:         string;
-  /** Human-readable hint shown inside zone e.g. "PDF or Word · Max 5MB" */
   acceptHint?:     string;
-  /** Allow picking multiple files */
   multiple?:       boolean;
-  /** Max file size in bytes */
   maxSize?:        number;
-  /** Disable the zone */
   disabled?:       boolean;
-  /** Show progress bar (0–100). When set, shows uploading state. */
   progress?:       number | null;
-  /** Called with selected/dropped files (already size-filtered) */
   onFilesChange?:  (files: File[]) => void;
-  /** Controlled files list */
   files?:          File[];
 }
+
+/* ── Glass tokens ────────────────────────────────────────── */
+const glass = {
+  bg:          'oklch(1 0 0 / 0.06)',
+  bgDrag:      'oklch(0.532 0.157 278.887 / 0.14)',
+  bgDisabled:  'oklch(1 0 0 / 0.02)',
+  border:      'oklch(1 0 0 / 0.15)',
+  borderDrag:  'oklch(0.592 0.134 278.887 / 0.7)',
+  borderDisabled: 'oklch(1 0 0 / 0.07)',
+  iconBg:      'oklch(1 0 0 / 0.08)',
+  rowBg:       'oklch(1 0 0 / 0.07)',
+  rowBorder:   'oklch(1 0 0 / 0.12)',
+  progressTrack: 'oklch(1 0 0 / 0.1)',
+  removeHoverBg: 'oklch(0.59 0.22 25 / 0.18)',
+} as const;
 
 /* ── Size map ────────────────────────────────────────────── */
 const sizeMap: Record<UploadSize, {
@@ -70,18 +72,18 @@ const sizeMap: Record<UploadSize, {
 
 /* ── Variant map ─────────────────────────────────────────── */
 const variantMap: Record<UploadVariant, {
-  borderIdle: string; helperColor: string;
+  border: string; helperColor: string;
 }> = {
   default: {
-    borderIdle:  'var(--border-default)',
-    helperColor: 'var(--text-muted)',
+    border:      glass.border,
+    helperColor: 'var(--neutral-400)',
   },
   error: {
-    borderIdle:  'var(--error-600)',
+    border:      'oklch(0.49 0.19 25 / 0.7)',
     helperColor: 'var(--text-error)',
   },
   success: {
-    borderIdle:  'var(--success-600)',
+    border:      'oklch(0.52 0.17 145 / 0.7)',
     helperColor: 'var(--success-400)',
   },
 };
@@ -93,6 +95,26 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/* ── Keyframe styles ─────────────────────────────────────── */
+const uploadAnimStyles = `
+  @keyframes uploadGlow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 oklch(0.68 0.18 220 / 0),
+                  0 0 0 0 oklch(0.532 0.157 278.887 / 0);
+    }
+    50% {
+      box-shadow: 0 0 28px 6px oklch(0.68 0.18 220 / 0.18),
+                  0 0 56px 16px oklch(0.532 0.157 278.887 / 0.09);
+    }
+  }
+  @keyframes spinIcon {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes dot1 { 0%,20%,100%{opacity:0} 35%,80%{opacity:1} }
+  @keyframes dot2 { 0%,35%,100%{opacity:0} 50%,80%{opacity:1} }
+  @keyframes dot3 { 0%,50%,100%{opacity:0} 65%,80%{opacity:1} }
+`;
+
 /* ── Icons ───────────────────────────────────────────────── */
 function UploadIcon({ size, color }: { size: number; color: string }) {
   return (
@@ -102,6 +124,43 @@ function UploadIcon({ size, color }: { size: number; color: string }) {
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
+  );
+}
+
+function SpinnerIcon({ size }: { size: number }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24" fill="none"
+      style={{ animation: 'spinIcon 0.9s linear infinite' }}
+    >
+      <circle cx="12" cy="12" r="9" stroke="oklch(1 0 0 / 0.1)" strokeWidth="2.5" />
+      <path
+        d="M12 3a9 9 0 019 9"
+        stroke="url(#spin_grad)" strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <defs>
+        <linearGradient id="spin_grad" x1="12" y1="3" x2="21" y2="12" gradientUnits="userSpaceOnUse">
+          <stop stopColor="oklch(0.68 0.18 220)" />
+          <stop offset="1" stopColor="oklch(0.592 0.134 278.887)" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function AnimatedDots() {
+  const dotStyle = (anim: string): React.CSSProperties => ({
+    display: 'inline-block',
+    animation: `${anim} 1.6s ease-in-out infinite`,
+    opacity: 0,
+  });
+  return (
+    <>
+      <span style={dotStyle('dot1')}>.</span>
+      <span style={dotStyle('dot2')}>.</span>
+      <span style={dotStyle('dot3')}>.</span>
+    </>
   );
 }
 
@@ -164,12 +223,14 @@ function FileRow({
         display: 'flex', alignItems: 'center', gap: '0.75rem',
         padding: '0.625rem 0.875rem',
         borderRadius: '0.625rem',
-        border: '1px solid var(--border-subtle)',
-        backgroundColor: 'var(--bg-surface)',
+        border: `1px solid ${glass.rowBorder}`,
+        backgroundColor: glass.rowBg,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       }}
     >
       {/* Icon */}
-      <span style={{ color: 'var(--text-brand)', flexShrink: 0 }}>
+      <span style={{ color: 'var(--brand-100)', flexShrink: 0 }}>
         <FileIcon size={16} />
       </span>
 
@@ -177,7 +238,7 @@ function FileRow({
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
           fontSize: 'var(--type-body-sm-size)',
-          color: 'var(--text-primary)',
+          color: 'var(--neutral-100)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           marginBottom: isUploading ? '0.375rem' : 0,
         }}>
@@ -186,29 +247,28 @@ function FileRow({
 
         {isUploading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {/* Progress bar */}
             <div style={{
               flex: 1, height: '3px', borderRadius: '999px',
-              backgroundColor: 'var(--border-default)',
+              backgroundColor: glass.progressTrack,
               overflow: 'hidden',
             }}>
               <div style={{
                 height: '100%', borderRadius: '999px',
-                backgroundColor: 'var(--interactive-primary)',
+                backgroundColor: 'var(--brand-100)',
                 width: `${progress}%`,
                 transition: 'width 200ms ease',
               }} />
             </div>
             <span style={{
               fontSize: 'var(--type-caption-size)',
-              color: 'var(--text-muted)',
-              flexShrink: 0, tabularNums: true,
+              color: 'var(--neutral-400)',
+              flexShrink: 0,
             } as React.CSSProperties}>
               {progress}%
             </span>
           </div>
         ) : (
-          <p style={{ fontSize: 'var(--type-caption-size)', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: 'var(--type-caption-size)', color: 'var(--neutral-400)' }}>
             {formatBytes(file.size)}
           </p>
         )}
@@ -225,8 +285,8 @@ function FileRow({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: '1.5rem', height: '1.5rem', borderRadius: '0.375rem',
             border: 'none', cursor: 'pointer', flexShrink: 0,
-            backgroundColor: hovered ? 'var(--error-900)' : 'transparent',
-            color: hovered ? 'var(--text-error)' : 'var(--text-muted)',
+            backgroundColor: hovered ? glass.removeHoverBg : 'transparent',
+            color: hovered ? 'var(--error-400)' : 'var(--neutral-500)',
             transition: 'background-color 120ms ease, color 120ms ease',
           }}
           aria-label={`Remove ${file.name}`}
@@ -255,42 +315,38 @@ export function FileUpload({
 }: FileUploadProps) {
   const inputRef   = useRef<HTMLInputElement>(null);
   const id         = useId();
-  const [dragging,       setDragging]       = useState(false);
-  const [internalFiles,  setInternalFiles]  = useState<File[]>([]);
-  const [sizeError,      setSizeError]      = useState<string | null>(null);
-  const [btnHovered,     setBtnHovered]     = useState(false);
+  const [dragging,      setDragging]      = useState(false);
+  const [internalFiles, setInternalFiles] = useState<File[]>([]);
+  const [sizeError,     setSizeError]     = useState<string | null>(null);
+  const [btnHovered,    setBtnHovered]    = useState(false);
 
-  const files      = controlledFiles ?? internalFiles;
-  const sz         = sizeMap[size];
-  const vt         = variantMap[variant];
+  const files = controlledFiles ?? internalFiles;
+  const sz    = sizeMap[size];
+  const vt    = variantMap[variant];
 
   const isUploading = typeof progress === 'number';
   const isComplete  = !isUploading && files.length > 0 && variant === 'success';
   const isError     = variant === 'error';
 
   const borderColor = disabled
-    ? 'var(--border-subtle)'
+    ? glass.borderDisabled
     : dragging
-      ? 'var(--border-brand)'
-      : isError
-        ? vt.borderIdle
-        : variant === 'success'
-          ? vt.borderIdle
-          : 'var(--border-default)';
+      ? glass.borderDrag
+      : vt.border;
 
   const bgColor = disabled
-    ? 'var(--bg-base)'
+    ? glass.bgDisabled
     : dragging
-      ? 'var(--bg-brand-muted)'
-      : 'var(--bg-subtle)';
+      ? glass.bgDrag
+      : glass.bg;
 
   const iconColor = disabled
-    ? 'var(--text-disabled)'
+    ? 'var(--neutral-600)'
     : dragging || isComplete
-      ? 'var(--text-brand)'
+      ? 'var(--brand-100)'
       : isError
         ? 'var(--text-error)'
-        : 'var(--text-muted)';
+        : 'var(--neutral-400)';
 
   const addFiles = useCallback((incoming: FileList | null) => {
     if (!incoming) return;
@@ -336,7 +392,6 @@ export function FileUpload({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     addFiles(e.target.files);
-    // reset input so the same file can be re-selected
     e.target.value = '';
   };
 
@@ -344,6 +399,7 @@ export function FileUpload({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+      <style>{uploadAnimStyles}</style>
       {/* Label */}
       {label && (
         <label
@@ -353,7 +409,7 @@ export function FileUpload({
             fontSize: 'var(--type-label-size)',
             fontWeight: 'var(--type-label-weight)',
             letterSpacing: 'var(--type-label-ls)',
-            color: disabled ? 'var(--text-disabled)' : 'var(--text-secondary)',
+            color: disabled ? 'var(--neutral-600)' : 'var(--neutral-300)',
           }}
         >
           {label}
@@ -369,11 +425,14 @@ export function FileUpload({
           position: 'relative',
           padding: `${sz.paddingY} ${sz.paddingX}`,
           borderRadius: sz.borderRadius,
-          border: `2px dashed ${borderColor}`,
+          border: `1.5px dashed ${borderColor}`,
           backgroundColor: bgColor,
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           textAlign: 'center',
           cursor: disabled || isUploading ? 'not-allowed' : 'pointer',
           transition: 'border-color 150ms ease, background-color 150ms ease',
+          animation: isUploading ? 'uploadGlow 2.2s ease-in-out infinite' : undefined,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -392,7 +451,7 @@ export function FileUpload({
           multiple={multiple}
           disabled={disabled || isUploading}
           onChange={handleInputChange}
-          style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+          style={{ display: 'none' }}
           tabIndex={-1}
           aria-hidden
         />
@@ -401,9 +460,8 @@ export function FileUpload({
         <div style={{
           width: `${sz.iconSize + 20}px`, height: `${sz.iconSize + 20}px`,
           borderRadius: '0.75rem',
-          backgroundColor: disabled
-            ? 'var(--bg-subtle)'
-            : isError ? 'var(--error-900)' : 'var(--bg-brand-subtle)',
+          backgroundColor: isError ? 'oklch(0.59 0.22 25 / 0.15)' : glass.iconBg,
+          border: `1px solid ${isError ? 'oklch(0.49 0.19 25 / 0.4)' : glass.rowBorder}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
@@ -411,8 +469,10 @@ export function FileUpload({
             <span style={{ color: 'var(--text-error)' }}>
               <ErrorIcon size={sz.iconSize - 8} />
             </span>
+          ) : isUploading ? (
+            <SpinnerIcon size={sz.iconSize - 4} />
           ) : isComplete ? (
-            <span style={{ color: 'var(--text-brand)' }}>
+            <span style={{ color: 'var(--brand-100)' }}>
               <CheckIcon size={sz.iconSize - 8} />
             </span>
           ) : (
@@ -425,23 +485,23 @@ export function FileUpload({
           <p style={{
             fontSize: sz.titleSize,
             fontWeight: 'var(--type-subheading-lg-weight)',
-            color: disabled ? 'var(--text-disabled)' : 'var(--text-primary)',
+            color: disabled ? 'var(--neutral-600)' : 'var(--neutral-100)',
             marginBottom: '0.25rem',
           }}>
             {dragging
               ? 'Drop to upload'
               : isUploading
-                ? 'Uploading…'
+                ? <span>Parsing your CV<AnimatedDots /></span>
                 : isComplete
                   ? 'Upload complete'
                   : hasFiles
                     ? 'Add more files'
-                    : 'Drop files here or'}
+                    : 'Drop your CV here or'}
           </p>
 
-          {/* Browse link or meta */}
+          {/* Browse link + hint */}
           {!dragging && !isUploading && !isComplete && (
-            <p style={{ fontSize: sz.metaSize, color: disabled ? 'var(--text-disabled)' : 'var(--text-muted)' }}>
+            <p style={{ fontSize: sz.metaSize, color: disabled ? 'var(--neutral-600)' : 'var(--neutral-400)' }}>
               {hasFiles ? '' : (
                 <>
                   <span
@@ -449,8 +509,8 @@ export function FileUpload({
                     onMouseLeave={() => setBtnHovered(false)}
                     style={{
                       color: disabled
-                        ? 'var(--text-disabled)'
-                        : btnHovered ? 'var(--text-brand)' : 'var(--interactive-primary)',
+                        ? 'var(--neutral-600)'
+                        : btnHovered ? 'var(--brand-50)' : 'var(--brand-100)',
                       textDecoration: disabled ? 'none' : 'underline',
                       cursor: disabled ? 'not-allowed' : 'pointer',
                       transition: 'color 120ms ease',

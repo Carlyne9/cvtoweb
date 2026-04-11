@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { FileUpload } from '@/components/ui/FileUpload';
+import { Modal } from '@/components/ui/Modal';
 import { Upload, ArrowRight, Trash2, Plus, Check, Search, Mail, User, Lock, Globe } from 'lucide-react';
 
 export default function DesignSystemPage() {
@@ -441,6 +442,9 @@ export default function DesignSystemPage() {
         {/* ── FILE UPLOAD ───────────────────────────────────── */}
         <FileUploadShowcase />
 
+        {/* ── MODAL ─────────────────────────────────────────── */}
+        <ModalShowcase />
+
         {/* Footer */}
         <footer className="border-t border-[var(--border-subtle)] pt-8 text-[var(--text-muted)] text-xs">
           CVtoWeb Design System · tokens defined in{' '}
@@ -612,6 +616,118 @@ function SemanticScale({
         ))}
       </div>
     </div>
+  );
+}
+
+/* ── ModalShowcase ───────────────────────────────────────── */
+
+function ModalShowcase() {
+  const [openModal, setOpenModal] = useState<'basic' | 'form' | 'confirm' | null>(null);
+
+  return (
+    <section>
+      <SectionLabel>Modal</SectionLabel>
+
+      <div className="space-y-6">
+        <TokenGroup label="Sizes & Variants">
+          <div className="px-4 py-5 bg-[var(--bg-subtle)] flex flex-wrap gap-3">
+
+            {/* Basic / informational */}
+            <Button variant="secondary" size="md" onClick={() => setOpenModal('basic')}>
+              Basic Modal
+            </Button>
+
+            {/* With form inputs */}
+            <Button variant="secondary" size="md" onClick={() => setOpenModal('form')}>
+              Form Modal
+            </Button>
+
+            {/* Confirmation / destructive */}
+            <Button variant="secondary" size="md" onClick={() => setOpenModal('confirm')}>
+              Confirm Modal
+            </Button>
+          </div>
+        </TokenGroup>
+      </div>
+
+      {/* ── Basic modal ─────────────────────────────────── */}
+      <Modal
+        isOpen={openModal === 'basic'}
+        onClose={() => setOpenModal(null)}
+        title="Portfolio Published"
+        description="Your portfolio is now live and shareable with the world."
+        footer={
+          <Button variant="primary" size="md" onClick={() => setOpenModal(null)}>
+            Got it
+          </Button>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{
+            padding: '1rem', borderRadius: '0.75rem',
+            backgroundColor: 'oklch(0.52 0.17 145 / 0.1)',
+            border: '1px solid oklch(0.52 0.17 145 / 0.3)',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+          }}>
+            <span style={{ color: 'var(--success-400)', fontSize: '1.25rem' }}>✓</span>
+            <div>
+              <p style={{ fontSize: 'var(--type-body-sm-size)', color: 'var(--text-primary)', fontWeight: 600 }}>
+                yourname.cvtoweb.com
+              </p>
+              <p style={{ fontSize: 'var(--type-caption-size)', color: 'var(--text-muted)' }}>
+                Live · Updates instantly
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Form modal ──────────────────────────────────── */}
+      <Modal
+        isOpen={openModal === 'form'}
+        onClose={() => setOpenModal(null)}
+        title="Publish Your Portfolio"
+        description="Choose your unique URL and we'll make it live."
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" size="md" onClick={() => setOpenModal(null)}>Cancel</Button>
+            <Button variant="primary" size="md">Publish</Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <Input
+            label="Your URL"
+            size="md"
+            placeholder="yourname"
+            suffix={<span style={{ fontSize: 'var(--type-body-sm-size)', whiteSpace: 'nowrap' }}>.cvtoweb.com</span>}
+          />
+          <Input
+            label="Email Address"
+            size="md"
+            type="email"
+            placeholder="you@example.com"
+            helperText="We'll send you a link to edit your portfolio later"
+          />
+        </div>
+      </Modal>
+
+      {/* ── Confirm modal ───────────────────────────────── */}
+      <Modal
+        isOpen={openModal === 'confirm'}
+        onClose={() => setOpenModal(null)}
+        title="Delete Portfolio"
+        description="This action cannot be undone. Your portfolio and its URL will be permanently removed."
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" size="md" onClick={() => setOpenModal(null)}>Cancel</Button>
+            <Button variant="danger" size="md">Delete</Button>
+          </>
+        }
+      />
+    </section>
   );
 }
 

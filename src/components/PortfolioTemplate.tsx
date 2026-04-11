@@ -490,7 +490,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         if (data.experience.length === 0 && !isEditing) return null;
         return (
           <section key="experience" className="mb-16">
-            <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Experience</h2>
+            <h4 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Experience</h4>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -506,7 +506,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                       <div className="mb-4">
                         <EditableText
                           id={`exp-role-${idx}`}
-                          element="h3"
+                          element="h5"
                           value={exp.role}
                           onSave={(v) => {
                             const newExp = [...data.experience];
@@ -620,7 +620,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         if (data.education.length === 0 && !isEditing) return null;
         return (
           <section key="education" className="mb-16">
-            <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Education</h2>
+            <h4 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Education</h4>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -635,7 +635,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
                     <SortableItem key={`edu-${idx}`} id={`edu-${idx}`} isEditing={!!isEditing}>
                       <EditableText
                         id={`edu-inst-${idx}`}
-                        element="h3"
+                        element="h5"
                         value={edu.institution}
                         onSave={(v) => {
                           const newEdu = [...data.education];
@@ -736,7 +736,7 @@ export default function PortfolioTemplate({ data, isEditing, onUpdate }: Props) 
         if (data.skills.length === 0 && !isEditing) return null;
         return (
           <section key="skills">
-            <h2 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Skills</h2>
+            <h4 className={`text-sm font-bold uppercase tracking-widest ${themeStyles.label} mb-8`}>Skills</h4>
             <div className="flex flex-wrap gap-3 items-center">
               {data.skills.map((skill, idx) => (
                 <div key={idx} className="group/skill relative">
